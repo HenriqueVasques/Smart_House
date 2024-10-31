@@ -14,7 +14,7 @@ class WelcomePage extends StatelessWidget {
           Positioned.fill(
             bottom: MediaQuery.of(context).size.height * 0.21, // Ajustado para cobrir até o início do lorem ipsum
             child: Image.asset(
-              'assets/images/welcome.png',
+              'images/welcome.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -26,7 +26,7 @@ class WelcomePage extends StatelessWidget {
                   children: [
                     // Ícone centralizado
                     Image.asset(
-                      'assets/images/logoWelcome.png',
+                      'images/logoWelcome.png',
                       width: 100,
                       height: 100,
                     ),

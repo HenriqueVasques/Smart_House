@@ -49,7 +49,7 @@ class HomePage extends StatelessWidget {
   BoxDecoration _buildBackgroundImage() {
     return BoxDecoration(
       image: DecorationImage(
-        image: AssetImage('assets/images/background_image.png'),
+        image: AssetImage('images/background_image.png'),
         fit: BoxFit.cover,
       ),
     );
@@ -118,11 +118,11 @@ class HomePage extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildRoomCard(context, 'Sala de Estar', 'assets/images/living_room.png'),
+          _buildRoomCard(context, 'Sala de Estar', 'images/living_room.png'),
           SizedBox(width: 10),
-          _buildRoomCard(context, 'Cozinha', 'assets/images/kitchen.png'),
+          _buildRoomCard(context, 'Cozinha', 'images/kitchen.png'),
           SizedBox(width: 10),
-          _buildRoomCard(context, 'Quarto', 'assets/images/bedroom.png'),
+          _buildRoomCard(context, 'Quarto', 'images/bedroom.png'),
         ],
       ),
     );
