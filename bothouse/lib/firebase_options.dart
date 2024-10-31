@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'smart-house-ac3b4.firebasestorage.app',
     measurementId: 'G-G321WPSKSG',
   );
+
 }
