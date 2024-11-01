@@ -137,10 +137,7 @@ class LoginPage extends StatelessWidget {
             mostrarSnackBar(context: context, texto: erro);
           }
         }
-        );
-      // Aqui você vai adicionar a lógica de autenticação com Firebase
-    } else {
-      print("Login falhou");
+      );
     }
   }
 }
