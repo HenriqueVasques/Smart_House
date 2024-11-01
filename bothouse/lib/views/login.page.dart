@@ -1,14 +1,22 @@
-// 3- login.page.dart
-
+import 'package:bothouse/comum/snackbar.dart';
+import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatelessWidget {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _senhaController = TextEditingController();
+
+  AutenticacaoServicos _autenServicos = AutenticacaoServicos();
+
+  LoginPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          // Imagem de fundo na metade superior
           Expanded(
             flex: 1,
             child: Container(
@@ -34,65 +42,105 @@ class LoginPage extends StatelessWidget {
               ),
             ),
           ),
-          // Área de login na metade inferior
           Expanded(
             flex: 1,
             child: Container(
               color: Colors.black,
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Email',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.blue),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue),
+                        ),
+                        prefixIcon: Icon(Icons.email, color: Colors.blue),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
-                      ),
-                      prefixIcon: Icon(Icons.email, color: Colors.blue),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return "O email não pode ser vazio";
+                        }
+                        if (!value.contains("@")) {
+                          return "Email inválido";
+                        }
+                        return null;
+                      },
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    obscureText: true,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Password',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _senhaController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Senha',
+                        labelStyle: TextStyle(color: Colors.blue),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue),
+                        ),
+                        prefixIcon: Icon(Icons.lock, color: Colors.blue),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blue),
+                      validator: (String? value) {
+                        if (value == null || value.isEmpty) {
+                          return "A Senha não pode ser vazia";
+                        }
+                        if (value.length < 5) {
+                          return "Senha muito curta";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton( 
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                       onPressed: () {
+                        validaLogin(context);
+                        
+                      },
+                      child: const Text('Entrar'),
                     ),
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton(
-                    child: Text('Log In'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white, 
-                      backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
-                  ),
-                  SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void validaLogin(BuildContext context) {
+    String email = _emailController.text;
+    String senha = _senhaController.text;
+    if (_formKey.currentState!.validate()) {
+      _autenServicos.logarUsuario(email: email, senha: senha).then(
+        (String? erro){
+          if (erro != null){
+            mostrarSnackBar(context: context, texto: erro);
+          }
+        }
+        );
+      // Aqui você vai adicionar a lógica de autenticação com Firebase
+    } else {
+      print("Login falhou");
+    }
   }
 }

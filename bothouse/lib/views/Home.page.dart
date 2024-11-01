@@ -1,3 +1,4 @@
+import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -221,6 +222,7 @@ class HomePage extends StatelessWidget {
             Icons.settings,
             Colors.white54,
             () {
+              AutenticacaoServicos().deslogar();
               print('Configurações pressionado');
             },
           ),
@@ -234,6 +236,7 @@ class HomePage extends StatelessWidget {
             Icons.person,
             Colors.white54,
             () {
+              Navigator.pushReplacementNamed(context, '/welcome');
               print('Perfil pressionado');
             },
           ),
