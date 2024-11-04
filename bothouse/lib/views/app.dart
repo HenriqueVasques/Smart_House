@@ -18,21 +18,18 @@ class App extends StatelessWidget {
         "/login": (context) => LoginPage(),
         "/welcome": (context) => WelcomePage(),
         "/home": (context) => HomePage(),
-        "/control": (context) => ControlPage(),
       },
-      // Remova o initialRoute se você quiser que o RoteadorTela decida a tela inicial
-      // initialRoute: "/welcome",
     );
   }
 }
 
 class RoteadorTela extends StatelessWidget {
-  const RoteadorTela({super.key}); // Adicionada a vírgula aqui
+  const RoteadorTela({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.userChanges(),
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return const HomePage();

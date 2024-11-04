@@ -1,7 +1,10 @@
+//LogiiniPage
+
 import 'package:bothouse/comum/snackbar.dart';
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:flutter/material.dart';
 
+// ignore: must_be_immutable
 class LoginPage extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
 

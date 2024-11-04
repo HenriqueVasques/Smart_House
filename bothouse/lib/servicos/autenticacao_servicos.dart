@@ -1,8 +1,10 @@
+// serviços de sutenticação
+
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:firebase_core/firebase_core.dart';
 
 class AutenticacaoServicos {
-FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   // criarUsuario({
   //   required String email, 
@@ -23,11 +25,16 @@ FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
     }
   }
 
-  Future<void> deslogar() async{
-  return _firebaseAuth.signOut();
+  Future<void> deslogar() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    }catch (erro) {
+      print('Erro ao fazer logout: $erro');
+    }
+  }
 }
 
-}
+
 
 
 

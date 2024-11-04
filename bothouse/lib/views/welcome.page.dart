@@ -90,7 +90,7 @@ class WelcomePage extends StatelessWidget {
                           ),
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.pushReplacementNamed(context, '/login');
+                               Navigator.pushNamed(context, '/login');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,

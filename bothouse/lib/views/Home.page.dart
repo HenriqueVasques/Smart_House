@@ -1,4 +1,7 @@
+//homepage
+
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
+import 'package:bothouse/views/control.page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -23,7 +26,7 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTopBar(),
+                        _buildTopBar(context),
                         SizedBox(height: 20),
                         _buildText('Bem-vindo à sua casa inteligente', 16, Colors.white70),
                         SizedBox(height: 20),
@@ -56,11 +59,19 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(Icons.menu, color: Colors.white),
+        IconButton(
+        icon: Icon(Icons.logout_rounded,
+         color: const Color.fromARGB(255, 131, 131, 131)
+         ),
+          onPressed: () {
+            Navigator.pop(context);
+            AutenticacaoServicos().deslogar();
+          } 
+        ),
         _buildText('Oi Henrique', 20, Colors.white, isBold: true),
       ],
     );
@@ -119,6 +130,8 @@ class HomePage extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
+          _buildRoomCard(context, 'Área de Lazer', 'images/kitchen.png'),
+          SizedBox(width: 10),
           _buildRoomCard(context, 'Sala de Estar', 'images/living_room.png'),
           SizedBox(width: 10),
           _buildRoomCard(context, 'Cozinha', 'images/kitchen.png'),
@@ -163,7 +176,12 @@ class HomePage extends StatelessWidget {
                   ElevatedButton(
                     child: Text('Ver'),
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/control');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ControlPage(nomeComodo: name),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
@@ -222,7 +240,7 @@ class HomePage extends StatelessWidget {
             Icons.settings,
             Colors.white54,
             () {
-              AutenticacaoServicos().deslogar();
+              
               print('Configurações pressionado');
             },
           ),
@@ -236,7 +254,7 @@ class HomePage extends StatelessWidget {
             Icons.person,
             Colors.white54,
             () {
-              Navigator.pushReplacementNamed(context, '/welcome');
+              Navigator.pushNamed(context, '/');
               print('Perfil pressionado');
             },
           ),

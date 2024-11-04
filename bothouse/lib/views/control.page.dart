@@ -1,8 +1,17 @@
+// control page
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 
 class ControlPage extends StatelessWidget {
+  final String nomeComodo; // Adicione esta linha
   final Random random = Random();
+  
+  ControlPage({
+    Key? key, 
+    required this.nomeComodo // Adicione esta linha
+  }) : super(key: key);
+  
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +50,13 @@ class ControlPage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.arrow_back, color: Colors.white),
             onPressed: (){
-              Navigator.pushReplacementNamed(context, '/home');
+              Navigator.pop(context); 
               },
           ),
           Expanded(
             child: Center(
               child: Text(
-                'Cômodo selecionado',
+                 nomeComodo,
                 style: TextStyle(
                   fontSize: 18, 
                   fontWeight: FontWeight.bold, 
