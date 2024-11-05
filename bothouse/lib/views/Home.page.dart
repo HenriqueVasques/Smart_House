@@ -123,7 +123,9 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
+//fazer um for dentro do meu banco, pega o usuario logado entra dentro da colection comodo dele, faz um for, para cada comodo executa minha chamada passsando os parametros para o construtor
+//buildRoomCard(context, 'comodos[nomecomodo]', 'imgcomodo.jpg'),
+//SizedBox(width: 10),
   Widget _buildRoomGrid(BuildContext context) {
     return SizedBox(
       height: 280,
