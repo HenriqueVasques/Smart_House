@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "326548561404",
+    "project_id": "smart-house-ac3b4",
+    "storage_bucket": "smart-house-ac3b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326548561404:android:84e717d4a9521ef9a86679",
+        "android_client_info": {
+          "package_name": "com.example.bothouse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7AJ3ZOENQ8nbKyuzklXGnS1-0UwnuJM0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326548561404:android:6ef1a264078b0ea9a86679",
+        "android_client_info": {
+          "package_name": "com.example.script_cadastro_usuario"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7AJ3ZOENQ8nbKyuzklXGnS1-0UwnuJM0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

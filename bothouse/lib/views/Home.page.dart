@@ -2,6 +2,8 @@
 
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/control.page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -69,7 +71,7 @@ class HomePage extends StatelessWidget {
          ),
           onPressed: () {
             Navigator.pop(context);
-            AutenticacaoServicos().deslogar();
+            AutenticacaoServicos().deslogar(context);
           } 
         ),
         _buildText('Oi Henrique', 20, Colors.white, isBold: true),
@@ -123,83 +125,110 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-//fazer um for dentro do meu banco, pega o usuario logado entra dentro da colection comodo dele, faz um for, para cada comodo executa minha chamada passsando os parametros para o construtor
-//buildRoomCard(context, 'comodos[nomecomodo]', 'imgcomodo.jpg'),
-//SizedBox(width: 10),
-  Widget _buildRoomGrid(BuildContext context) {
-    return SizedBox(
-      height: 280,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          _buildRoomCard(context, 'Área de Lazer', 'images/kitchen.png'),
-          SizedBox(width: 10),
-          _buildRoomCard(context, 'Sala de Estar', 'images/living_room.png'),
-          SizedBox(width: 10),
-          _buildRoomCard(context, 'Cozinha', 'images/kitchen.png'),
-          SizedBox(width: 10),
-          _buildRoomCard(context, 'Quarto', 'images/bedroom.png'),
-        ],
-      ),
-    );
-  }
+//metodo que constroi os cards da pagina inicial
 
-  Widget _buildRoomCard(BuildContext context, String name, String imagePath) {
-    return Container(
-      width: 120,
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
+Widget _buildRoomGrid(BuildContext context) {
+  return FutureBuilder(
+    future: _buscaComodos(), // Chama a função que busca os cômodos do usuário logado
+    builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto espera
+      } else if (snapshot.hasError) {
+        return Center(child: Text('Erro ao carregar cômodos')); // Exibe uma mensagem de erro, se houver
+      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return Center(child: Text('Nenhum cômodo encontrado')); // Exibe uma mensagem caso não encontre cômodos
+      } else {
+        // Adiciona rolagem horizontal
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: snapshot.data!.map((comodo) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildRoomCard(context, comodo['nome'], 'images/bedroom.png'), // Usa uma imagem padrão
+              );
+            }).toList(),
+          ),
+        );
+      }
+    },
+  );
+}
+
+
+// Função para buscar os cômodos do usuário logado no Firestore
+Future<List<Map<String, dynamic>>> _buscaComodos() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) return [];
+  QuerySnapshot snapshot = await FirebaseFirestore.instance
+      .collection('usuarios')
+      .doc(user.uid)
+      .collection('comodos')
+      .get();
+  
+  return snapshot.docs.map((doc) {
+    return {'nome': doc['nomeComodo'] ?? 'Sem nome'};
+  }).toList();
+}
+
+
+
+Widget _buildRoomCard(BuildContext context, String name, String imagePath) {
+  return Container(
+    width: 120,
+    height: 180,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      image: DecorationImage(
+        image: AssetImage(imagePath),
+        fit: BoxFit.cover,
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildText(name, 16, Colors.white, isBold: true),
-                  SizedBox(height: 5),
-                  ElevatedButton(
-                    child: Text('Ver'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ControlPage(nomeComodo: name),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ],
+    ),
+    child: Stack(
+      children: [
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildText(name, 16, Colors.white, isBold: true),
+                SizedBox(height: 5),
+                ElevatedButton(
+                  child: Text('Ver'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ControlPage(nomeComodo: name),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildCard({required Widget child}) {
     return Container(

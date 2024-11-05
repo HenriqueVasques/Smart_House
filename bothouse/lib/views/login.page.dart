@@ -1,19 +1,54 @@
-//LogiiniPage
-
 import 'package:bothouse/comum/snackbar.dart';
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:flutter/material.dart';
 
-// ignore: must_be_immutable
-class LoginPage extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>();
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
+  final AutenticacaoServicos _autenServicos = AutenticacaoServicos();
+  bool _isLoading = false;
 
-  AutenticacaoServicos _autenServicos = AutenticacaoServicos();
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _senhaController.dispose();
+    super.dispose();
+  }
 
-  LoginPage({super.key});
+  void validaLogin(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      String? erro = await _autenServicos.logarUsuario(
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
+
+      if (!mounted) return;
+
+      if (erro != null) {
+        mostrarSnackBar(context: context, texto: erro);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +64,10 @@ class LoginPage extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-              child: Align(
+              child: const Align(
                 alignment: Alignment.topLeft,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16.0),
                   child: Text(
                     'SMART\nHOME',
                     style: TextStyle(
@@ -107,17 +142,23 @@ class LoginPage extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton( 
+                    ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                       onPressed: () {
-                        validaLogin(context);
-                        
-                      },
-                      child: const Text('Entrar'),
+                      onPressed: _isLoading ? null : () => validaLogin(context),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Entrar'),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -128,19 +169,5 @@ class LoginPage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void validaLogin(BuildContext context) {
-    String email = _emailController.text;
-    String senha = _senhaController.text;
-    if (_formKey.currentState!.validate()) {
-      _autenServicos.logarUsuario(email: email, senha: senha).then(
-        (String? erro){
-          if (erro != null){
-            mostrarSnackBar(context: context, texto: erro);
-          }
-        }
-      );
-    }
   }
 }
