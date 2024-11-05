@@ -1,6 +1,8 @@
 import 'package:bothouse/comum/snackbar.dart';
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
+import 'package:bothouse/views/Home.page.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,6 +42,11 @@ class _LoginPageState extends State<LoginPage> {
 
       if (erro != null) {
         mostrarSnackBar(context: context, texto: erro);
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
       }
     } finally {
       if (mounted) {
@@ -133,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       validator: (String? value) {
                         if (value == null || value.isEmpty) {
-                          return "A Senha não pode ser vazia";
+                          return "A senha não pode ser vazia";
                         }
                         if (value.length < 5) {
                           return "Senha muito curta";
