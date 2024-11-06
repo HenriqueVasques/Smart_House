@@ -2,7 +2,6 @@ import 'package:bothouse/comum/snackbar.dart';
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/Home.page.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

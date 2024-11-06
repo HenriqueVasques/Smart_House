@@ -1,5 +1,3 @@
-//homepage
-
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/control.page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -66,13 +64,11 @@ class HomePage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-        icon: Icon(Icons.logout_rounded,
-         color: const Color.fromARGB(255, 131, 131, 131)
-         ),
+          icon: Icon(Icons.logout_rounded, color: Color.fromARGB(255, 131, 131, 131)),
           onPressed: () {
             Navigator.pop(context);
             AutenticacaoServicos().deslogar(context);
-          } 
+          }
         ),
         _buildText('Oi Henrique', 20, Colors.white, isBold: true),
       ],
@@ -125,110 +121,107 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-//metodo que constroi os cards da pagina inicial
 
-Widget _buildRoomGrid(BuildContext context) {
-  return FutureBuilder(
-    future: _buscaComodos(), // Chama a função que busca os cômodos do usuário logado
-    builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto espera
-      } else if (snapshot.hasError) {
-        return Center(child: Text('Erro ao carregar cômodos')); // Exibe uma mensagem de erro, se houver
-      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return Center(child: Text('Nenhum cômodo encontrado')); // Exibe uma mensagem caso não encontre cômodos
-      } else {
-        // Adiciona rolagem horizontal
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: snapshot.data!.map((comodo) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: _buildRoomCard(context, comodo['nome'], 'images/bedroom.png'), // Usa uma imagem padrão
-              );
-            }).toList(),
-          ),
-        );
-      }
-    },
-  );
-}
-
-
-// Função para buscar os cômodos do usuário logado no Firestore
-Future<List<Map<String, dynamic>>> _buscaComodos() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) return [];
-  QuerySnapshot snapshot = await FirebaseFirestore.instance
-      .collection('usuarios')
-      .doc(user.uid)
-      .collection('comodos')
-      .get();
-  
-  return snapshot.docs.map((doc) {
-    return {'nome': doc['nomeComodo'] ?? 'Sem nome'};
-  }).toList();
-}
-
-
-
-Widget _buildRoomCard(BuildContext context, String name, String imagePath) {
-  return Container(
-    width: 120,
-    height: 180,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      image: DecorationImage(
-        image: AssetImage(imagePath),
-        fit: BoxFit.cover,
-      ),
-    ),
-    child: Stack(
-      children: [
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
+  // Método que constrói os cards da página inicial
+  Widget _buildRoomGrid(BuildContext context) {
+    return FutureBuilder(
+      future: _buscaComodos(), // Chama a função que busca os cômodos do usuário logado
+      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto espera
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Erro ao carregar cômodos')); // Exibe uma mensagem de erro, se houver
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('Nenhum cômodo encontrado')); // Exibe uma mensagem caso não encontre cômodos
+        } else {
+          // Adiciona rolagem horizontal
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: snapshot.data!.map((comodo) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: _buildRoomCard(context, comodo['id'], comodo['nome'], 'images/quarto.png'), // Usa uma imagem padrão
+                );
+              }).toList(),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildText(name, 16, Colors.white, isBold: true),
-                SizedBox(height: 5),
-                ElevatedButton(
-                  child: Text('Ver'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ControlPage(nomeComodo: name),
+          );
+        }
+      },
+    );
+  }
+
+  // Função para buscar os cômodos do usuário logado no Firestore
+  Future<List<Map<String, dynamic>>> _buscaComodos() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return [];
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .collection('comodos')
+        .get();
+
+    return snapshot.docs.map((doc) {
+      return {'id': doc.id, 'nome': doc['nomeComodo'] ?? 'Sem nome'};
+    }).toList();
+  }
+
+  Widget _buildRoomCard(BuildContext context, String comodoId, String name, String imagePath) {
+    return Container(
+      width: 120,
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        image: DecorationImage(
+          image: AssetImage(imagePath),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildText(name, 16, Colors.white, isBold: true),
+                  SizedBox(height: 5),
+                  ElevatedButton(
+                    child: Text('Ver'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ControlPage(comodoId: comodoId, nomeComodo: name),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildCard({required Widget child}) {
     return Container(
@@ -263,34 +256,33 @@ Widget _buildRoomCard(BuildContext context, String name, String imagePath) {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-         children: [
-        // Ícone de configurações à esquerda
-        Padding(
-          padding: const EdgeInsets.only(left: 40),
-          child: _buildNavIcon(
-            Icons.settings,
-            Colors.white54,
-            () {
-              
-              print('Configurações pressionado');
-            },
+        children: [
+          // Ícone de configurações à esquerda
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: _buildNavIcon(
+              Icons.settings,
+              Colors.white54,
+              () {
+                print('Configurações pressionado');
+              },
+            ),
           ),
-        ),
-        // Espaço central ocupado pelo botão de Wi-Fi
-        SizedBox(width: 60), // Espaço para o botão Wi-Fi acima
-        // Ícone de perfil à direita
-        Padding(
-          padding: const EdgeInsets.only(right: 40),
-          child: _buildNavIcon(
-            Icons.person,
-            Colors.white54,
-            () {
-              Navigator.pushNamed(context, '/');
-              print('Perfil pressionado');
-            },
+          // Espaço central ocupado pelo botão de Wi-Fi
+          SizedBox(width: 60), // Espaço para o botão Wi-Fi acima
+          // Ícone de perfil à direita
+          Padding(
+            padding: const EdgeInsets.only(right: 40),
+            child: _buildNavIcon(
+              Icons.person,
+              Colors.white54,
+              () {
+                Navigator.pushNamed(context, '/');
+                print('Perfil pressionado');
+              },
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
