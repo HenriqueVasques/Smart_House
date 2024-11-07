@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
+  ///#region Construtores e Build Principal
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,22 +24,7 @@ class HomePage extends StatelessWidget {
                   decoration: _buildBackgroundImage(),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTopBar(context),
-                        SizedBox(height: 20),
-                        _buildText('Bem-vindo à sua casa inteligente', 16, Colors.white70),
-                        SizedBox(height: 20),
-                        _buildTemperatureHumidityCard(),
-                        SizedBox(height: 20),
-                        _buildActiveDevicesCard(),
-                        SizedBox(height: 20),
-                        _buildText('Selecione o Cômodo', 18, Colors.white, isBold: true),
-                        SizedBox(height: 10),
-                        _buildRoomGrid(context),
-                      ],
-                    ),
+                    child: _buildMainContent(context),
                   ),
                 ),
               ),
@@ -47,6 +33,127 @@ class HomePage extends StatelessWidget {
         },
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
+    );
+  }
+  
+  Widget _buildMainContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTopBar(context),
+        SizedBox(height: 20),
+        _buildText('Bem-vindo à sua casa inteligente', 16, Colors.white70),
+        SizedBox(height: 20),
+        _buildTemperatureHumidityCard(),
+        SizedBox(height: 20),
+        _buildActiveDevicesCard(),
+        SizedBox(height: 20),
+        _buildText('Selecione o Cômodo', 18, Colors.white, isBold: true),
+        SizedBox(height: 10),
+        _buildRoomGrid(context),
+      ],
+    );
+  }
+  ///#endregion
+
+  ///#region Serviços e Métodos de Dados
+  Future<int> _calculaTotalDispositivos() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('Nenhum usuário logado');
+        return 0;
+      }
+
+      QuerySnapshot comodosSnapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('comodos')
+          .get();
+
+      int totalDispositivos = 0;
+
+      for (var comodo in comodosSnapshot.docs) {
+        Map<String, dynamic> data = comodo.data() as Map<String, dynamic>;
+        
+        if (data.containsKey('dispositivos')) {
+          List<dynamic> dispositivos = data['dispositivos'];
+          totalDispositivos += dispositivos.length;
+          print('Cômodo: ${data['nomeComodo']} - ${dispositivos.length} dispositivos');
+        }
+      }
+
+      print('Total de dispositivos encontrados: $totalDispositivos');
+      return totalDispositivos;
+    } catch (e) {
+      print('Erro ao calcular total de dispositivos: $e');
+      return 0;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _buscaComodos() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('Nenhum usuário logado');
+        return [];
+      }
+
+      print('Buscando cômodos para o usuário: ${user.uid}');
+
+      DocumentReference userRef = FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid);
+
+      DocumentSnapshot userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        print('Documento do usuário não existe');
+        return [];
+      }
+
+      QuerySnapshot comodosSnapshot = await userRef
+          .collection('comodos')
+          .get();
+
+      print('Número de cômodos encontrados: ${comodosSnapshot.docs.length}');
+
+      return comodosSnapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        print('Dados do cômodo ${doc.id}: $data');
+        
+        return {
+          'id': doc.id,
+          'nome': data['nomeComodo'],
+          'dispositivos': data['dispositivos'] ?? []
+        };
+      }).toList();
+    } catch (e) {
+      print('Erro ao buscar cômodos: $e');
+      return [];
+    }
+  }
+  ///#endregion
+
+  ///#region Componentes de UI Base
+  Widget _buildText(String text, double size, Color color, {bool isBold = false}) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: size, 
+        fontWeight: isBold ? FontWeight.bold : FontWeight.normal, 
+        color: color
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: child,
     );
   }
 
@@ -58,7 +165,9 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+  ///#endregion
 
+  ///#region Componentes do Cabeçalho
   Widget _buildTopBar(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -74,14 +183,9 @@ class HomePage extends StatelessWidget {
       ],
     );
   }
+  ///#endregion
 
-  Widget _buildText(String text, double size, Color color, {bool isBold = false}) {
-    return Text(
-      text,
-      style: TextStyle(fontSize: size, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: color),
-    );
-  }
-
+  ///#region Cards de Informação
   Widget _buildTemperatureHumidityCard() {
     return _buildCard(
       child: Row(
@@ -111,59 +215,114 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildActiveDevicesCard() {
-    return _buildCard(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildText('5 Dispositivos Ativos', 16, Colors.white),
-          Switch(value: true, onChanged: (value) {}, activeColor: Colors.blue),
-        ],
-      ),
-    );
-  }
-
-  // Método que constrói os cards da página inicial
-  Widget _buildRoomGrid(BuildContext context) {
-    return FutureBuilder(
-      future: _buscaComodos(), // Chama a função que busca os cômodos do usuário logado
-      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+    return FutureBuilder<int>(
+      future: _calculaTotalDispositivos(),
+      builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto espera
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Erro ao carregar cômodos')); // Exibe uma mensagem de erro, se houver
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('Nenhum cômodo encontrado')); // Exibe uma mensagem caso não encontre cômodos
-        } else {
-          // Adiciona rolagem horizontal
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          return _buildCard(
             child: Row(
-              children: snapshot.data!.map((comodo) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: _buildRoomCard(context, comodo['id'], comodo['nome'], 'images/quarto.png'), // Usa uma imagem padrão
-                );
-              }).toList(),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Calculando dispositivos...',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                ),
+              ],
             ),
           );
         }
+
+        int totalDispositivos = snapshot.data ?? 0;
+        return _buildCard(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$totalDispositivos ${totalDispositivos == 1 ? 'Dispositivo Ativo' : 'Dispositivos Ativos'}',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              Switch(
+                value: totalDispositivos > 0,
+                onChanged: (value) {
+                  // TODO: Implementar lógica para ligar/desligar todos os dispositivos
+                },
+                activeColor: Colors.blue,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  ///#endregion
+
+  ///#region Grid de Cômodos
+  Widget _buildRoomGrid(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _buscaComodos(),
+      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(color: Colors.blue)
+          );
+        } 
+        
+        if (snapshot.hasError) {
+          print('Erro no FutureBuilder: ${snapshot.error}');
+          return Center(
+            child: Text(
+              'Erro ao carregar cômodos',
+              style: TextStyle(color: Colors.white),
+            )
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyRoomState();
+        }
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: snapshot.data!.map((comodo) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _buildRoomCard(
+                  context, 
+                  comodo['id'], 
+                  comodo['nome'], 
+                  'images/quarto.png'
+                ),
+              );
+            }).toList(),
+          ),
+        );
       },
     );
   }
 
-  // Função para buscar os cômodos do usuário logado no Firestore
-  Future<List<Map<String, dynamic>>> _buscaComodos() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return [];
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(user.uid)
-        .collection('comodos')
-        .get();
-
-    return snapshot.docs.map((doc) {
-      return {'id': doc.id, 'nome': doc['nomeComodo'] ?? 'Sem nome'};
-    }).toList();
+  Widget _buildEmptyRoomState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Nenhum cômodo encontrado',
+            style: TextStyle(color: Colors.white),
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implementar adição de novo cômodo
+            },
+            child: Text('Adicionar Cômodo'),
+          )
+        ],
+      )
+    );
   }
 
   Widget _buildRoomCard(BuildContext context, String comodoId, String name, String imagePath) {
@@ -195,18 +354,18 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildText(name, 16, Colors.white, isBold: true),
+                  Text(
+                    name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   SizedBox(height: 5),
                   ElevatedButton(
                     child: Text('Ver'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ControlPage(comodoId: comodoId, nomeComodo: name),
-                        ),
-                      );
-                    },
+                    onPressed: () => _navegarParaControlPage(context, comodoId, name),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -223,17 +382,20 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCard({required Widget child}) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+  void _navegarParaControlPage(BuildContext context, String comodoId, String name) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ControlPage(
+          comodoId: comodoId, 
+          nomeComodo: name
+        ),
       ),
-      child: child,
     );
   }
+  ///#endregion
 
+  ///#region Barra de Navegação
   Widget _buildBottomNavigationBar(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
@@ -257,20 +419,15 @@ class HomePage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Ícone de configurações à esquerda
           Padding(
             padding: const EdgeInsets.only(left: 40),
             child: _buildNavIcon(
               Icons.settings,
               Colors.white54,
-              () {
-                print('Configurações pressionado');
-              },
+              () => print('Configurações pressionado'),
             ),
           ),
-          // Espaço central ocupado pelo botão de Wi-Fi
-          SizedBox(width: 60), // Espaço para o botão Wi-Fi acima
-          // Ícone de perfil à direita
+          SizedBox(width: 60),
           Padding(
             padding: const EdgeInsets.only(right: 40),
             child: _buildNavIcon(
@@ -304,10 +461,9 @@ class HomePage extends StatelessWidget {
       ),
       child: IconButton(
         icon: Icon(Icons.wifi, color: Colors.white, size: 30),
-        onPressed: () {
-          print('Parear pressionado');
-        },
+        onPressed: () => print('Parear pressionado'),
       ),
     );
   }
+  ///#endregion
 }

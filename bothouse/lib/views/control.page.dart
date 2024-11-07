@@ -22,23 +22,37 @@ class _ControlPageState extends State<ControlPage> {
   }
 
   Future<List<Dispositivo>> _fetchDispositivos() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return [];
-    }
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Usuário não autenticado');
+      }
 
-    // Obter a coleção de dispositivos do cômodo específico
-    DocumentSnapshot comodoSnapshot = await FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(user.uid)
-        .collection('comodos')
-        .doc(widget.comodoId)
-        .get();
+      // Busca o documento do cômodo
+      DocumentSnapshot comodoSnapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .collection('comodos')
+          .doc(widget.comodoId)
+          .get();
+          
+      // Converte o snapshot para Map
+      Map<String, dynamic> data = comodoSnapshot.data() as Map<String, dynamic>;
+      
+      // Verifica se existe a lista de dispositivos
+      if (!data.containsKey('dispositivos')) {
+        print('Nenhum dispositivo encontrado para o cômodo: ${widget.nomeComodo}');
+        return [];
+      }
 
-    if (comodoSnapshot.exists) {
-      List<dynamic> dispositivosData = comodoSnapshot['dispositivos'];
-      return dispositivosData.map((dispositivo) => Dispositivo(nome: dispositivo as String)).toList();
-    } else {
+      // Converte a lista de dispositivos
+      List<dynamic> dispositivosData = data['dispositivos'] as List<dynamic>;
+      
+      // Cria objetos Dispositivo a partir das strings
+      return dispositivosData.map((nome) => Dispositivo(nome: nome.toString())).toList();
+
+    } catch (e) {
+      print('Erro ao buscar dispositivos: $e');
       return [];
     }
   }
@@ -57,12 +71,21 @@ class _ControlPageState extends State<ControlPage> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return const Center(child: Text('Erro ao carregar dispositivos'));
+              return Center(
+                child: Text(
+                  'Erro ao carregar dispositivos',
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('Nenhum dispositivo encontrado'));
-            } else {
-              return _buildScrollableGrid(snapshot.data!);
+              return Center(
+                child: Text(
+                  'Nenhum dispositivo encontrado em ${widget.nomeComodo}',
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
             }
+            return _buildScrollableGrid(snapshot.data!);
           },
         ),
       ),
@@ -151,11 +174,9 @@ class _ControlPageState extends State<ControlPage> {
                     ),
                   ),
                   Switch(
-                    value: dispositivo.isConnected,
+                    value: false, // Sempre começa desligado
                     onChanged: (value) {
-                      setState(() {
-                        dispositivo.isConnected = value;
-                      });
+                      // Implementar lógica de controle aqui
                     },
                     activeColor: const Color(0xFF0161FA).withOpacity(0.7),
                     inactiveThumbColor: Colors.white,
@@ -172,11 +193,8 @@ class _ControlPageState extends State<ControlPage> {
 }
 
 class Dispositivo {
-  String nome;
-  bool isConnected;
+  final String nome;
+  final bool isConnected = false; // Sempre false por padrão
 
-  Dispositivo({
-    required this.nome,
-    this.isConnected = false, // Todos os dispositivos começam desligados por padrão
-  });
+  Dispositivo({required this.nome});
 }
