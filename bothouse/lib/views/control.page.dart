@@ -1,6 +1,5 @@
+import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class ControlPage extends StatefulWidget {
   final String comodoId;
@@ -14,6 +13,7 @@ class ControlPage extends StatefulWidget {
 
 class _ControlPageState extends State<ControlPage> {
   late Future<List<Dispositivo>> dispositivosFuture;
+  final FirebaseServicos firebaseServicos = FirebaseServicos();
 
   @override
   void initState() {
@@ -21,42 +21,20 @@ class _ControlPageState extends State<ControlPage> {
     dispositivosFuture = _fetchDispositivos();
   }
 
+  //#region Fetch Dispositivos
   Future<List<Dispositivo>> _fetchDispositivos() async {
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('Usuário não autenticado');
-      }
-
-      // Busca o documento do cômodo
-      DocumentSnapshot comodoSnapshot = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(user.uid)
-          .collection('comodos')
-          .doc(widget.comodoId)
-          .get();
-          
-      // Converte o snapshot para Map
-      Map<String, dynamic> data = comodoSnapshot.data() as Map<String, dynamic>;
-      
-      // Verifica se existe a lista de dispositivos
-      if (!data.containsKey('dispositivos')) {
-        print('Nenhum dispositivo encontrado para o cômodo: ${widget.nomeComodo}');
-        return [];
-      }
-
-      // Converte a lista de dispositivos
-      List<dynamic> dispositivosData = data['dispositivos'] as List<dynamic>;
-      
-      // Cria objetos Dispositivo a partir das strings
-      return dispositivosData.map((nome) => Dispositivo(nome: nome.toString())).toList();
-
+      return await firebaseServicos.buscarDispositivosComodo(widget.comodoId).then((dispositivosData) {
+        return dispositivosData.map((nome) => Dispositivo(nome: nome)).toList();
+      });
     } catch (e) {
       print('Erro ao buscar dispositivos: $e');
       return [];
     }
   }
+  //#endregion
 
+  //#region Build Methods
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +85,9 @@ class _ControlPageState extends State<ControlPage> {
       },
     );
   }
+  //#endregion
 
+  //#region Device Card
   Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
     return Container(
       decoration: BoxDecoration(
@@ -174,7 +154,7 @@ class _ControlPageState extends State<ControlPage> {
                     ),
                   ),
                   Switch(
-                    value: false, // Sempre começa desligado
+                    value: false,
                     onChanged: (value) {
                       // Implementar lógica de controle aqui
                     },
@@ -190,11 +170,12 @@ class _ControlPageState extends State<ControlPage> {
       ),
     );
   }
+  //#endregion
 }
 
 class Dispositivo {
   final String nome;
-  final bool isConnected = false; // Sempre false por padrão
+  final bool isConnected = false;
 
   Dispositivo({required this.nome});
 }
