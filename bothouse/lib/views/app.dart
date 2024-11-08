@@ -32,9 +32,9 @@ class RoteadorTela extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator()); // Mostra um loading enquanto verifica o estado
         } else if (snapshot.hasData) {
-          return const HomePage();
+          return HomePage();
         } else {
-          return  LoginPage();
+          return LoginPage();
         }
       },
     );
