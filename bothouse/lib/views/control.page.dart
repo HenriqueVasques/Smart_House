@@ -1,4 +1,3 @@
-// control page
 import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +39,16 @@ class _ControlPageState extends State<ControlPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Controle do ${widget.nomeComodo}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Controle do ${widget.nomeComodo}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF211D1D),
+        elevation: 0,
       ),
       backgroundColor: const Color(0xFF211D1D),
       body: SafeArea(
@@ -90,76 +98,77 @@ class _ControlPageState extends State<ControlPage> {
 
   //#region Device Card
   Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
-  return Container(
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF222834), Color(0xFF001524)],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF222834), Color(0xFF001524)],
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                dispositivo.nome,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+      child: Column(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Text(
+                    dispositivo.nome,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Image.asset(
-                dispositivo.imagePath,
-                width: 85,
-                height: 85,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.device_unknown,
+                const SizedBox(height: 16),
+                Image.asset(
+                  dispositivo.imagePath,
+                  width: 85,
+                  height: 85,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.device_unknown,
+                      color: Colors.white,
+                      size: 85,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'OFF',
+                  style: TextStyle(
                     color: Colors.white,
-                    size: 85,
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        const Spacer(),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'OFF',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Switch(
-                value: false,
-                onChanged: (value) {
-                  // Implementar lógica de controle aqui
-                },
-                activeColor: const Color(0xFF0161FA).withOpacity(0.7),
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
-              ),
-            ],
+                Switch(
+                  value: false,
+                  onChanged: (value) {
+                    // Implementar lógica de controle aqui
+                  },
+                  activeColor: const Color(0xFF0161FA).withOpacity(0.7),
+                  inactiveThumbColor: Colors.white,
+                  inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
   //#endregion
 }
 
