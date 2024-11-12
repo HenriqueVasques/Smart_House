@@ -1,3 +1,4 @@
+// home page
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/control.page.dart';
 import 'package:flutter/material.dart';
@@ -5,11 +6,24 @@ import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:bothouse/widgets/bluetooth_dialog.dart';
 import 'package:bothouse/servicos/bluetooth_servicos.dart';
 
+  ///#region Classes
+  class RoomData {
+  final String id;
+  final String nome;
+  final String imagePath;
+
+  RoomData({
+    required this.id,
+    required this.nome,
+  }) : imagePath = 'images/${nome.toLowerCase()}.png';
+}
+  
 class HomePage extends StatelessWidget {
   HomePage({Key? key}) : super(key: key);
 
   final FirebaseServicos _firebaseServicos = FirebaseServicos();
   final BluetoothServicos _bluetoothServicos = BluetoothServicos();
+  ///#endregion
 
   ///#region Construtores e Build Principal
   @override
@@ -47,13 +61,13 @@ class HomePage extends StatelessWidget {
       children: [
         _buildTopBar(context),
         const SizedBox(height: 20),
-        _buildText('Bem-vindo à sua casa inteligente', 16, Colors.white70),
+        _buildText('Bem-vindo à sua casa inteligente', 16, const Color.fromARGB(179, 0, 0, 0)),
         const SizedBox(height: 20),
         _buildTemperatureHumidityCard(),
         const SizedBox(height: 20),
         _buildActiveDevicesCard(),
         const SizedBox(height: 20),
-        _buildText('Selecione o Cômodo', 18, Colors.white, isBold: true),
+        _buildText('Selecione o Cômodo', 18, const Color.fromARGB(255, 0, 0, 0), isBold: true),
         const SizedBox(height: 10),
         _buildRoomGrid(context),
       ],
@@ -192,111 +206,120 @@ class HomePage extends StatelessWidget {
 
   ///#region Grid de Cômodos
   Widget _buildRoomGrid(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _buscaComodos(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.blue));
-        } 
-        
-        if (snapshot.hasError) {
-          print('Erro no FutureBuilder: ${snapshot.error}');
-          return const Center(
-            child: Text('Erro ao carregar cômodos', style: TextStyle(color: Colors.white))
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text('Nenhum cômodo encontrado', style: TextStyle(color: Colors.white))
-          );
-        }
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: snapshot.data!.map((comodo) => Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: _buildRoomCard(
-                context, 
-                comodo['id'], 
-                comodo['nome'], 
-                'images/quarto.png'
-              ),
-            )).toList(),
-          ),
+  return FutureBuilder<List<Map<String, dynamic>>>(
+    future: _buscaComodos(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator(color: Colors.blue));
+      } 
+      
+      if (snapshot.hasError) {
+        print('Erro no FutureBuilder: ${snapshot.error}');
+        return const Center(
+          child: Text('Erro ao carregar cômodos', style: TextStyle(color: Colors.white))
         );
-      },
-    );
+      }
+
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return const Center(
+          child: Text('Nenhum cômodo encontrado', style: TextStyle(color: Colors.white))
+        );
+      }
+
+      List<RoomData> comodos = snapshot.data!.map((comodo) => RoomData(
+        id: comodo['id'],
+        nome: comodo['nome'],
+      )).toList();
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: comodos.map((comodo) => Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: _buildRoomCard(context, comodo),
+          )).toList(),
+        ),
+      );
+    },
+  );
   }
 
-  Widget _buildRoomCard(BuildContext context, String comodoId, String name, String imagePath) {
-    return Container(
-      width: 120,
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ControlPage(
-                          comodoId: comodoId, 
-                          nomeComodo: name
-                        ),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Text('Ver'),
-                  ),
-                ],
-              ),
+  Widget _buildRoomCard(BuildContext context, RoomData comodo) {
+  return Container(
+    width: 120,
+    height: 180,
+    child: Stack(
+      children: [
+        // Usando Image.asset em vez de DecorationImage para manter consistência
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              comodo.imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.home, color: Colors.white, size: 40),
+                );
+              },
             ),
           ),
-        ],
-      ),
-    );
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  comodo.nome,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                ElevatedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ControlPage(
+                        comodoId: comodo.id,
+                        nomeComodo: comodo.nome,
+                      ),
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text('Ver'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
   }
-  ///#endregion
+ ///#endregion
 
-///#region Barra de Navegação
+  ///#region Barra de Navegação
   Widget _buildBottomNavigationBar(BuildContext context) {
     return SizedBox(
       height: 65, // Aumentada para acomodar o botão flutuante
@@ -385,4 +408,6 @@ class HomePage extends StatelessWidget {
     );
   }
   ///#endregion
-  } 
+} 
+
+  

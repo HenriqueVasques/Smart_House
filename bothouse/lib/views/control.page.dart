@@ -1,3 +1,4 @@
+// control page
 import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:flutter/material.dart';
 
@@ -89,93 +90,84 @@ class _ControlPageState extends State<ControlPage> {
 
   //#region Device Card
   Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF222834), Color(0xFF001524)],
-        ),
-        borderRadius: BorderRadius.circular(12),
+  return Container(
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF222834), Color(0xFF001524)],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dispositivo.nome,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                dispositivo.nome,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Text(
-                      'Desconectado',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'OFF',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Switch(
-                    value: false,
-                    onChanged: (value) {
-                      // Implementar lógica de controle aqui
-                    },
-                    activeColor: const Color(0xFF0161FA).withOpacity(0.7),
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
-                  ),
-                ],
               ),
-            ),
+              const SizedBox(height: 8),
+              Image.asset(
+                dispositivo.imagePath,
+                width: 85,
+                height: 85,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.device_unknown,
+                    color: Colors.white,
+                    size: 85,
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        const Spacer(),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'OFF',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Switch(
+                value: false,
+                onChanged: (value) {
+                  // Implementar lógica de controle aqui
+                },
+                activeColor: const Color(0xFF0161FA).withOpacity(0.7),
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
   //#endregion
 }
 
 class Dispositivo {
   final String nome;
-  final bool isConnected = false;
+  final String imagePath;
 
-  Dispositivo({required this.nome});
+  Dispositivo({
+    required this.nome,
+  }) : imagePath = 'icones_dispositivos/${nome.toLowerCase()}.png';
 }
