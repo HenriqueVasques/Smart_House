@@ -1,4 +1,5 @@
 import 'package:bothouse/servicos/firebase_servicos.dart';
+import 'package:bothouse/views/dispositivos/ar_condicionado_page.dart';
 import 'package:flutter/material.dart';
 
 class ControlPage extends StatefulWidget {
@@ -98,74 +99,91 @@ class _ControlPageState extends State<ControlPage> {
 
   //#region Device Card
   Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF222834), Color(0xFF001524)],
+    return GestureDetector(
+      onTap: () {
+        // Navegação baseada no tipo de dispositivo
+        if (dispositivo.nome == "Ar_Condicionado") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ArCondicionadoPage(
+                comodoId: widget.comodoId,
+                dispositivoNome: dispositivo.nome,
+              ),
+            ),
+          );
+        }
+        // Adicione outros casos para diferentes tipos de dispositivos aqui
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF222834), Color(0xFF001524)],
+          ),
+          borderRadius: BorderRadius.circular(12),
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text(
-                    dispositivo.nome,
-                    style: const TextStyle(
+        child: Column(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Text(
+                      dispositivo.nome,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Image.asset(
+                    dispositivo.imagePath,
+                    width: 85,
+                    height: 85,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.device_unknown,
+                        color: Colors.white,
+                        size: 85,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'OFF',
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Image.asset(
-                  dispositivo.imagePath,
-                  width: 85,
-                  height: 85,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.device_unknown,
-                      color: Colors.white,
-                      size: 85,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'OFF',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  Switch(
+                    value: false,
+                    onChanged: (value) {
+                      // Implementar lógica de controle aqui
+                    },
+                    activeColor: const Color(0xFF0161FA).withOpacity(0.7),
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
                   ),
-                ),
-                Switch(
-                  value: false,
-                  onChanged: (value) {
-                    // Implementar lógica de controle aqui
-                  },
-                  activeColor: const Color(0xFF0161FA).withOpacity(0.7),
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
