@@ -1,5 +1,9 @@
 import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:bothouse/views/dispositivos/ar_condicionado_page.dart';
+import 'package:bothouse/views/dispositivos/fechadura.dart';
+import 'package:bothouse/views/dispositivos/janela.dart';
+import 'package:bothouse/views/dispositivos/lampada.dart';
+import 'package:bothouse/views/dispositivos/ventilador.dart';
 import 'package:flutter/material.dart';
 
 class ControlPage extends StatefulWidget {
@@ -98,23 +102,73 @@ class _ControlPageState extends State<ControlPage> {
   //#endregion
 
   //#region Device Card
-  Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
-    return GestureDetector(
-      onTap: () {
-        // Navegação baseada no tipo de dispositivo
-        if (dispositivo.nome == "Ar_Condicionado") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ArCondicionadoPage(
-                comodoId: widget.comodoId,
-                dispositivoNome: dispositivo.nome,
-              ),
+ Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
+  return GestureDetector(
+    onTap: () {
+      // Navegação baseada no tipo de dispositivo
+      if (dispositivo.nome == "Ar_Condicionado") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArCondicionadoPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
             ),
-          );
-        }
-        // Adicione outros casos para diferentes tipos de dispositivos aqui
-      },
+          ),
+        );
+      } else if (dispositivo.nome == "Lampada") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LampadaPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
+            ),
+          ),
+        );
+      } else if (dispositivo.nome == "Ventilador") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VentiladorPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
+            ),
+          ),
+        );
+      } else if (dispositivo.nome == "Fechadura") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FechaduraPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
+            ),
+          ),
+        );
+      } else if (dispositivo.nome == "Fechadura") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FechaduraPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
+            ),
+          ),
+        );
+      }else if (dispositivo.nome == "Janela") {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JanelaPage(
+              comodoId: widget.comodoId,
+              dispositivoNome: dispositivo.nome,
+            ),
+          ),
+        );
+      }
+      // Adicione outros casos para diferentes tipos de dispositivos aqui
+    },
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
