@@ -246,9 +246,33 @@ class _ControlPageState extends State<ControlPage> {
 
 class Dispositivo {
   final String nome;
-  final String imagePath;
+  late String imagePath;
 
   Dispositivo({
     required this.nome,
-  }) : imagePath = 'icones_dispositivos/${nome.toLowerCase()}.png';
+  }) {
+    // Normalizando o nome para gerar um caminho de imagem correto.
+    imagePath = 'icones_dispositivos/${_normalizarNome(nome)}.png';
+  }
+
+  // Função para normalizar o nome removendo acentos e caracteres especiais
+  String _normalizarNome(String nome) {
+    // Substitui caracteres acentuados por suas versões sem acento
+    String semAcento = nome
+        .replaceAll(RegExp(r'[áàâãäå]'), 'a')
+        .replaceAll(RegExp(r'[éèêë]'), 'e')
+        .replaceAll(RegExp(r'[íìîï]'), 'i')
+        .replaceAll(RegExp(r'[óòôõö]'), 'o')
+        .replaceAll(RegExp(r'[úùûü]'), 'u')
+        .replaceAll(RegExp(r'[ç]'), 'c')
+        .replaceAll(RegExp(r'[ÁÀÂÃÄÅ]'), 'A')
+        .replaceAll(RegExp(r'[ÉÈÊË]'), 'E')
+        .replaceAll(RegExp(r'[ÍÌÎÏ]'), 'I')
+        .replaceAll(RegExp(r'[ÓÒÔÕÖ]'), 'O')
+        .replaceAll(RegExp(r'[ÚÙÛÜ]'), 'U')
+        .replaceAll(RegExp(r'[Ç]'), 'C');
+
+    // Converte para minúsculas e substitui espaços por underscores
+    return semAcento.toLowerCase().replaceAll(' ', '_');
+  }
 }
