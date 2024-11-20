@@ -1,10 +1,10 @@
-// lib/views/Home.page
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/control.page.dart';
 import 'package:flutter/material.dart';
 import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:bothouse/widgets/bluetooth_dialog.dart';
 import 'package:bothouse/servicos/bluetooth_servicos.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 
 ///#region Classes
 class RoomData {
@@ -19,11 +19,32 @@ class RoomData {
             'assets/images/${nome.toLowerCase()}.png'; 
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
 
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final FirebaseServicos _firebaseServicos = FirebaseServicos();
   final BluetoothServicos _bluetoothServicos = BluetoothServicos();
+  String bluetoothStatus = 'Verificando Bluetooth...';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBluetoothAvailability();
+  }
+
+  // Função para verificar se o Bluetooth está disponível
+  Future<void> _checkBluetoothAvailability() async {
+    bool isAvailable = await FlutterBlue.instance.isAvailable;
+    setState(() {
+      bluetoothStatus = isAvailable ? 'Bluetooth disponível' : 'Bluetooth não disponível';
+    });
+    print(bluetoothStatus); // Exibindo no console
+  }
 
   ///#endregion
 
@@ -74,6 +95,8 @@ class HomePage extends StatelessWidget {
             isBold: true),
         const SizedBox(height: 10),
         _buildRoomGrid(context),
+        const SizedBox(height: 20),
+        _buildText(bluetoothStatus, 16, Colors.white), // Exibe o status do Bluetooth
       ],
     );
   }

@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permissões antigas do Bluetooth -->
+    <!-- Permissões do Bluetooth para versões mais antigas -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     
@@ -8,17 +7,14 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     
-    <!-- Permissões de localização -->
+    <!-- Permissões de localização (necessárias para a detecção de dispositivos Bluetooth) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
     <!-- Declaração de feature para garantir compatibilidade -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
-
+    
     <application
         android:label="bothouse"
         android:name="${applicationName}"

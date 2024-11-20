@@ -10,6 +10,7 @@ class BluetoothServicos {
   final _connectionStateController = StreamController<bool>.broadcast();
   Stream<bool> get connectionState => _connectionStateController.stream;
 
+  // Requisição de permissões necessárias para o Bluetooth
   Future<void> requestPermissions() async {
     await Permission.bluetooth.request();
     await Permission.bluetoothScan.request();
@@ -17,6 +18,7 @@ class BluetoothServicos {
     await Permission.location.request();
   }
 
+  // Escanear dispositivos Bluetooth disponíveis
   Future<List<BluetoothDevice>> scanDevices() async {
     await requestPermissions();
     
@@ -46,6 +48,7 @@ class BluetoothServicos {
     }
   }
 
+  // Conectar ao dispositivo Bluetooth
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
       // Verifica pareamento, faz pareamento se necessário
@@ -62,7 +65,9 @@ class BluetoothServicos {
       await _connection?.finish();
 
       _connection = await BluetoothConnection.toAddress(device.address)
-        .timeout(const Duration(seconds: 15));
+        .timeout(const Duration(seconds: 15), onTimeout: () {
+          throw Exception("Timeout ao tentar conectar ao dispositivo Bluetooth");
+        });
 
       if (_connection?.isConnected ?? false) {
         connectedDevice = device;
@@ -88,17 +93,20 @@ class BluetoothServicos {
     }
   }
 
+  // Desconectar do dispositivo
   void _handleDisconnection() {
     _connection = null;
     connectedDevice = null;
     _connectionStateController.add(false);
   }
 
+  // Função para desconectar
   Future<void> desconectar() async {
     await _connection?.finish();
     _handleDisconnection();
   }
 
+  // Função de limpeza
   Future<void> dispose() async {
     await desconectar();
     await _connectionStateController.close();

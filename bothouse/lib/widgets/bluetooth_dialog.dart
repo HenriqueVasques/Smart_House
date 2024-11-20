@@ -1,5 +1,3 @@
-// lib/widgets/bluetooth_dialog.dart
-
 import 'package:bothouse/servicos/bluetooth_servicos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -29,6 +27,7 @@ class _BluetoothDialogState extends State<BluetoothDialog> {
     super.dispose();
   }
 
+  // Função para escanear dispositivos
   Future<void> _scanDevices() async {
     if (_isScanning) return;
 
@@ -62,6 +61,7 @@ class _BluetoothDialogState extends State<BluetoothDialog> {
     }
   }
 
+  // Função para conectar ao dispositivo
   Future<void> _connectToDevice(BluetoothDeviceWithStatus deviceWithStatus) async {
     if (deviceWithStatus.connectionStatus == ConnectionStatus.connecting) {
       return;
@@ -171,6 +171,7 @@ class _BluetoothDialogState extends State<BluetoothDialog> {
     );
   }
 
+  // Widget para mostrar o status da conexão
   Widget _buildConnectionStatusWidget(BluetoothDeviceWithStatus deviceWithStatus) {
     switch (deviceWithStatus.connectionStatus) {
       case ConnectionStatus.connecting:
