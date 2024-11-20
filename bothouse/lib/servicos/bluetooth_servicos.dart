@@ -59,10 +59,8 @@ class BluetoothServicos {
         await Future.delayed(const Duration(seconds: 2));
       }
 
-      // Fecha conexão existente
       await _connection?.finish();
 
-      // Tenta conexão única
       _connection = await BluetoothConnection.toAddress(device.address)
         .timeout(const Duration(seconds: 15));
 
@@ -70,7 +68,6 @@ class BluetoothServicos {
         connectedDevice = device;
         _connectionStateController.add(true);
         
-        // Configura listener de recepção de dados
         _connection?.input?.listen(
           (data) => print('Dados recebidos: $data'),
           onDone: () => _handleDisconnection(),

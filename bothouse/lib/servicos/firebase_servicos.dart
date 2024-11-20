@@ -7,11 +7,8 @@ class FirebaseServicos {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Verifica se há usuário logado
   User? get currentUser => _auth.currentUser;
 
-  // método para buscar o nome do usuário
-  
   Future<String> buscarNomeUsuario() async {
     try {
       User? user = currentUser;
