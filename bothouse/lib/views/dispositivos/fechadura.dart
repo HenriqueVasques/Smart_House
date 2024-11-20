@@ -20,7 +20,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
   String _autoLock = '30s';
   bool _isLocked = true;
   bool _silentMode = false;
-  double _volumeSlider = 2; // 0-3 para volume do beep
+  double _volumeSlider = 2; 
   //#endregion
 
   //#region Métodos de Atualização
@@ -201,7 +201,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
                   'Modo Silencioso',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 2),
                 Icon(
                   _silentMode ? Icons.volume_off : Icons.volume_up,
                   color: _silentMode ? Colors.blue : Colors.white,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // Necessário para o CupertinoSwitch
+import 'package:flutter/cupertino.dart'; 
 
 class LampadaPage extends StatefulWidget {
   final String comodoId;

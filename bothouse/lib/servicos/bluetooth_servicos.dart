@@ -1,102 +1,109 @@
-//lib/servicos/bluetooth_servicos.dart
-import 'dart:typed_data';
-
-
+import 'dart:async';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothServicos {
-  final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
+  FlutterBluetoothSerial bluetooth = FlutterBluetoothSerial.instance;
+  BluetoothDevice? connectedDevice;
   BluetoothConnection? _connection;
   
-  Future<bool> get isEnabled async => await _bluetooth.isEnabled ?? false;
+  final _connectionStateController = StreamController<bool>.broadcast();
+  Stream<bool> get connectionState => _connectionStateController.stream;
 
-  
-  Future<void> inicializarBluetooth() async {
-    try {
-      // Verifica se o Bluetooth está ligado
-      bool isEnabled = await _bluetooth.isEnabled ?? false;
-      if (!isEnabled) {
-        // Solicita ao usuário para ligar o Bluetooth
-        await _bluetooth.requestEnable();
-      }
-    } catch (e) {
-      print('Erro ao inicializar Bluetooth: $e');
-      rethrow;
-    }
+  Future<void> requestPermissions() async {
+    await Permission.bluetooth.request();
+    await Permission.bluetoothScan.request();
+    await Permission.bluetoothConnect.request();
+    await Permission.location.request();
   }
 
-  Future<List<BluetoothDevice>> buscarDispositivos() async {
-    List<BluetoothDevice> devices = [];
+  Future<List<BluetoothDevice>> scanDevices() async {
+    await requestPermissions();
+    
+    if (!(await bluetooth.isEnabled ?? false)) {
+      await bluetooth.requestEnable();
+    }
+
+    List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
+    
     try {
-      // Inicia a descoberta de dispositivos
-      _bluetooth.startDiscovery().listen(
-        (BluetoothDiscoveryResult result) {
-          // Adiciona dispositivo se ainda não estiver na lista
-          if (!devices.contains(result.device)) {
-            devices.add(result.device);
+      StreamSubscription? discoverySubscription = bluetooth.startDiscovery().listen(
+        (r) {
+          if (!devices.any((device) => device.address == r.device.address)) {
+            devices.add(r.device);
           }
         },
-        onDone: () {
-          print('Busca de dispositivos concluída');
-        },
-        onError: (error) {
-          print('Erro na busca de dispositivos: $error');
-        }
+        cancelOnError: true,
       );
-      
-      // Aguarda alguns segundos para a busca
-      await Future.delayed(const Duration(seconds: 10));
+
+      await Future.delayed(const Duration(seconds: 12));
+      await discoverySubscription.cancel();
+
       return devices;
     } catch (e) {
       print('Erro ao buscar dispositivos: $e');
-      rethrow;
+      return devices;
     }
   }
 
-  Future<void> conectarDispositivo(BluetoothDevice device) async {
+  Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
-      _connection = await BluetoothConnection.toAddress(device.address);
-      print('Conectado ao dispositivo: ${device.name}');
-      
-      // Configura listener para dados recebidos
-      _connection?.input?.listen(
-        (data) {
-          print('Dados recebidos: ${String.fromCharCodes(data)}');
-        },
-        onDone: () {
-          print('Conexão finalizada');
-          _connection?.finish();
-        },
-        onError: (error) {
-          print('Erro na conexão: $error');
-          _connection?.finish();
+      // Verifica pareamento, faz pareamento se necessário
+      final bondedDevices = await bluetooth.getBondedDevices();
+      if (!bondedDevices.any((d) => d.address == device.address)) {
+        final bondResult = await bluetooth.bondDeviceAtAddress(device.address);
+        if (bondResult != true) {
+          print('Falha no pareamento');
+          return false;
         }
-      );
+        await Future.delayed(const Duration(seconds: 2));
+      }
+
+      // Fecha conexão existente
+      await _connection?.finish();
+
+      // Tenta conexão única
+      _connection = await BluetoothConnection.toAddress(device.address)
+        .timeout(const Duration(seconds: 15));
+
+      if (_connection?.isConnected ?? false) {
+        connectedDevice = device;
+        _connectionStateController.add(true);
+        
+        // Configura listener de recepção de dados
+        _connection?.input?.listen(
+          (data) => print('Dados recebidos: $data'),
+          onDone: () => _handleDisconnection(),
+          onError: (error) {
+            print('Erro na conexão: $error');
+            _handleDisconnection();
+          },
+          cancelOnError: true,
+        );
+
+        return true;
+      }
+
+      return false;
     } catch (e) {
-      print('Erro ao conectar ao dispositivo: $e');
-      rethrow;
+      print('Erro de conexão: $e');
+      return false;
     }
+  }
+
+  void _handleDisconnection() {
+    _connection = null;
+    connectedDevice = null;
+    _connectionStateController.add(false);
   }
 
   Future<void> desconectar() async {
-    try {
-      await _connection?.close();
-      _connection = null;
-    } catch (e) {
-      print('Erro ao desconectar: $e');
-      rethrow;
-    }
+    await _connection?.finish();
+    _handleDisconnection();
   }
 
-  Future<void> enviarDados(String dados) async {
-    try {
-     _connection?.output.add(Uint8List.fromList(dados.codeUnits));
-      await _connection?.output.allSent;
-    } catch (e) {
-      print('Erro ao enviar dados: $e');
-      rethrow;
-    }
+  Future<void> dispose() async {
+    await desconectar();
+    await _connectionStateController.close();
   }
-
-  bool get isConnected => _connection?.isConnected ?? false;
 }

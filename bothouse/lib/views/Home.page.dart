@@ -1,4 +1,4 @@
-// home page
+// lib/views/Home.page
 import 'package:bothouse/servicos/autenticacao_servicos.dart';
 import 'package:bothouse/views/control.page.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,7 @@ class RoomData {
     required this.id,
     required this.nome,
   }) : imagePath =
-            'assets/images/${nome.toLowerCase()}.png'; // Corrigido para refletir o diretório correto
+            'assets/images/${nome.toLowerCase()}.png'; 
 }
 
 class HomePage extends StatelessWidget {
@@ -266,7 +266,6 @@ class HomePage extends StatelessWidget {
       height: 180,
       child: Stack(
         children: [
-          // Usando Image.asset com o caminho correto
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -337,10 +336,39 @@ class HomePage extends StatelessWidget {
 
   ///#endregion
 
+  ///#region Bluetooth Services
+  void _handleBluetoothError(BuildContext context, dynamic error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro de Bluetooth: $error')),
+    );
+  }
+
+  Future<void> _handleBluetoothConnection(BuildContext context) async {
+    try {
+      if (_bluetoothServicos.connectedDevice != null) {
+        await _bluetoothServicos.desconectar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dispositivo desconectado')),
+        );
+      } else {
+        final result = await showDialog(
+          context: context,
+          builder: (context) => const BluetoothDialog(),
+        );
+        if (result == true) {
+        }
+      }
+    } catch (e) {
+      _handleBluetoothError(context, e);
+    }
+  }
+
+  ///#endregion
+
   ///#region Barra de Navegação
   Widget _buildBottomNavigationBar(BuildContext context) {
     return SizedBox(
-      height: 65, // Aumentada para acomodar o botão flutuante
+      height: 65, 
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
@@ -382,26 +410,7 @@ class HomePage extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () async {
-                  try {
-                    if (_bluetoothServicos.isConnected) {
-                      await _bluetoothServicos.desconectar();
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Dispositivo desconectado')));
-                    } else {
-                      final result = await showDialog(
-                        context: context,
-                        builder: (context) => const BluetoothDialog(),
-                      );
-                      if (result == true) {
-                        // Conexão bem-sucedida, o feedback já foi mostrado no diálogo
-                      }
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('Erro: $e')));
-                  }
-                },
+                onTap: () => _handleBluetoothConnection(context),
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
                   height: 60,
@@ -411,7 +420,7 @@ class HomePage extends StatelessWidget {
                     color: Colors.blue,
                   ),
                   child: Icon(
-                    _bluetoothServicos.isConnected
+                    _bluetoothServicos.connectedDevice != null
                         ? Icons.bluetooth_connected
                         : Icons.wifi,
                     color: Colors.white,

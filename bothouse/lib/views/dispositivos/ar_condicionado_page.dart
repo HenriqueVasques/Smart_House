@@ -143,7 +143,6 @@
     }
 
     Widget _buildGridBotoes() {
-      // TODO: Altura reduzida para caber em uma tela
       return Container(
         height: 280,
         child: Column(
@@ -203,7 +202,6 @@
 
     Widget _buildBotaoTemperatura() {
       return Container(
-        // TODO: Altura reduzida do container
         height: 160,
         decoration: BoxDecoration(
           color: Colors.grey[850],
@@ -317,7 +315,6 @@
     }
 
     Widget _buildBotaoPower() {
-      // TODO: Novo design do botão power maior e com texto dinâmico
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10),

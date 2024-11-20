@@ -1,104 +1,207 @@
-    // lib/widgets/bluetooth_dialog.dart
+// lib/widgets/bluetooth_dialog.dart
 
+import 'package:bothouse/servicos/bluetooth_servicos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import '../servicos/bluetooth_servicos.dart';
 
 class BluetoothDialog extends StatefulWidget {
   const BluetoothDialog({Key? key}) : super(key: key);
 
   @override
-  State<BluetoothDialog> createState() => _BluetoothDialogState();
+  _BluetoothDialogState createState() => _BluetoothDialogState();
 }
 
 class _BluetoothDialogState extends State<BluetoothDialog> {
   final BluetoothServicos _bluetoothServicos = BluetoothServicos();
-  List<BluetoothDevice> _devices = [];
-  bool _isLoading = true;
+  List<BluetoothDeviceWithStatus> _devices = [];
+  bool _isScanning = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _iniciarBusca();
+    _scanDevices();
   }
 
-  Future<void> _iniciarBusca() async {
+  @override
+  void dispose() {
+    _bluetoothServicos.dispose();
+    super.dispose();
+  }
+
+  Future<void> _scanDevices() async {
+    if (_isScanning) return;
+
+    setState(() {
+      _isScanning = true;
+      _devices.clear();
+      _errorMessage = null;
+    });
+
     try {
-      await _bluetoothServicos.inicializarBluetooth();
-      final devices = await _bluetoothServicos.buscarDispositivos();
-      setState(() {
-        _devices = devices;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
+      final scannedDevices = await _bluetoothServicos.scanDevices();
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao buscar dispositivos: $e'))
-        );
+        setState(() {
+          _devices = scannedDevices
+              .map((device) => BluetoothDeviceWithStatus(
+                    device: device,
+                    connectionStatus: ConnectionStatus.notConnected,
+                  ))
+              .toList();
+          _isScanning = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _errorMessage = 'Erro ao buscar dispositivos: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _connectToDevice(BluetoothDeviceWithStatus deviceWithStatus) async {
+    if (deviceWithStatus.connectionStatus == ConnectionStatus.connecting) {
+      return;
+    }
+
+    setState(() {
+      _errorMessage = null;
+      deviceWithStatus.connectionStatus = ConnectionStatus.connecting;
+    });
+
+    try {
+      final result = await _bluetoothServicos.connectToDevice(deviceWithStatus.device);
+
+      if (mounted) {
+        setState(() {
+          if (result) {
+            deviceWithStatus.connectionStatus = ConnectionStatus.connected;
+            Navigator.of(context).pop(true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Conectado a ${deviceWithStatus.device.name ?? "dispositivo"}')),
+            );
+          } else {
+            deviceWithStatus.connectionStatus = ConnectionStatus.unavailable;
+            _errorMessage = 'Falha ao conectar ${deviceWithStatus.device.name ?? "dispositivo"}';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          deviceWithStatus.connectionStatus = ConnectionStatus.notConnected;
+          _errorMessage = 'Erro de conexão: $e';
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        padding: const EdgeInsets.all(16),
+    return AlertDialog(
+      title: const Text('Dispositivos Bluetooth'),
+      content: SizedBox(
+        width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Dispositivos Disponíveis',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red.shade800),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            if (_isLoading)
-              const CircularProgressIndicator()
+            if (_isScanning)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              )
             else if (_devices.isEmpty)
-              const Text('Nenhum dispositivo encontrado')
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('Nenhum dispositivo encontrado'),
+              )
             else
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: _devices.length,
                   itemBuilder: (context, index) {
-                    final device = _devices[index];
+                    final deviceWithStatus = _devices[index];
+                    final device = deviceWithStatus.device;
+                    
                     return ListTile(
-                      title: Text(device.name ?? 'Dispositivo desconhecido'),
+                      title: Text(device.name ?? 'Dispositivo sem nome'),
                       subtitle: Text(device.address),
-                      onTap: () async {
-                        try {
-                          await _bluetoothServicos.conectarDispositivo(device);
-                          if (mounted) {
-                            Navigator.pop(context, true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Conectado a ${device.name}'))
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erro ao conectar: $e'))
-                            );
-                          }
-                        }
-                      },
+                      trailing: _buildConnectionStatusWidget(deviceWithStatus),
+                      onTap: deviceWithStatus.connectionStatus == ConnectionStatus.connecting
+                          ? null
+                          : () => _connectToDevice(deviceWithStatus),
                     );
                   },
                 ),
               ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
-            ),
           ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: _isScanning ? null : _scanDevices,
+          child: const Text('Reescanear'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+      ],
     );
   }
+
+  Widget _buildConnectionStatusWidget(BluetoothDeviceWithStatus deviceWithStatus) {
+    switch (deviceWithStatus.connectionStatus) {
+      case ConnectionStatus.connecting:
+        return const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        );
+      case ConnectionStatus.connected:
+        return const Icon(Icons.check_circle, color: Colors.green);
+      case ConnectionStatus.unavailable:
+        return const Icon(Icons.error, color: Colors.red);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+class BluetoothDeviceWithStatus {
+  final BluetoothDevice device;
+  ConnectionStatus connectionStatus;
+
+  BluetoothDeviceWithStatus({
+    required this.device,
+    this.connectionStatus = ConnectionStatus.notConnected,
+  });
+}
+
+enum ConnectionStatus {
+  notConnected,
+  connecting,
+  connected,
+  unavailable
 }

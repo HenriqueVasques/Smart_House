@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:bothouse/views/welcome.page.dart';
 import 'package:bothouse/views/login.page.dart';
 import 'package:bothouse/views/home.page.dart';
 
@@ -11,10 +10,9 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
-      home: const RoteadorTela(), // Usa o RoteadorTela como home
+      home: const RoteadorTela(), 
       routes: {
         "/login": (context) => LoginPage(),
-        "/welcome": (context) => WelcomePage(),
         "/home": (context) => HomePage(),
       },
     );
@@ -30,7 +28,7 @@ class RoteadorTela extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator()); // Mostra um loading enquanto verifica o estado
+          return const Center(child: CircularProgressIndicator()); 
         } else if (snapshot.hasData) {
           return HomePage();
         } else {

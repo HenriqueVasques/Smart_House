@@ -20,7 +20,7 @@ class _JanelaPageState extends State<JanelaPage> {
   String _abertura = '50%';
   bool _isClosed = true;
   bool _autoMode = false;
-  double _aberturaSlider = 50; // 0-100 para percentual de abertura
+  double _aberturaSlider = 50; 
   bool _cortinasAtivadas = true;
   bool _travada = false;
   //#endregion

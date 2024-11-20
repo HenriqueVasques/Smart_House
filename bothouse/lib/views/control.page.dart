@@ -105,7 +105,6 @@ class _ControlPageState extends State<ControlPage> {
  Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
   return GestureDetector(
     onTap: () {
-      // Navegação baseada no tipo de dispositivo
       if (dispositivo.nome == "Ar_Condicionado") {
         Navigator.push(
           context,
@@ -146,17 +145,7 @@ class _ControlPageState extends State<ControlPage> {
             ),
           ),
         );
-      } else if (dispositivo.nome == "Fechadura") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FechaduraPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      }else if (dispositivo.nome == "Janela") {
+      } else if (dispositivo.nome == "Janela") {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -167,80 +156,50 @@ class _ControlPageState extends State<ControlPage> {
           ),
         );
       }
-      // Adicione outros casos para diferentes tipos de dispositivos aqui
     },
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF222834), Color(0xFF001524)],
-          ),
-          borderRadius: BorderRadius.circular(12),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF222834), Color(0xFF001524)],
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Text(
-                      dispositivo.nome,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Image.asset(
-                    dispositivo.imagePath,
-                    width: 85,
-                    height: 85,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.device_unknown,
-                        color: Colors.white,
-                        size: 85,
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'OFF',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Switch(
-                    value: false,
-                    onChanged: (value) {
-                      // Implementar lógica de controle aqui
-                    },
-                    activeColor: const Color(0xFF0161FA).withOpacity(0.7),
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: const Color(0xFF0161FA).withOpacity(0.3),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Text(
+              dispositivo.nome,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Image.asset(
+            dispositivo.imagePath,
+            width: 67,
+            height: 67,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.device_unknown,
+                color: Colors.white,
+                size: 60,
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
   //#endregion
 }
 
@@ -251,13 +210,11 @@ class Dispositivo {
   Dispositivo({
     required this.nome,
   }) {
-    // Normalizando o nome para gerar um caminho de imagem correto.
-    imagePath = 'icones_dispositivos/${_normalizarNome(nome)}.png';
+    imagePath = 'assets/icones_dispositivos/${_normalizarNome(nome)}.png';
   }
 
   // Função para normalizar o nome removendo acentos e caracteres especiais
   String _normalizarNome(String nome) {
-    // Substitui caracteres acentuados por suas versões sem acento
     String semAcento = nome
         .replaceAll(RegExp(r'[áàâãäå]'), 'a')
         .replaceAll(RegExp(r'[éèêë]'), 'e')
@@ -272,7 +229,6 @@ class Dispositivo {
         .replaceAll(RegExp(r'[ÚÙÛÜ]'), 'U')
         .replaceAll(RegExp(r'[Ç]'), 'C');
 
-    // Converte para minúsculas e substitui espaços por underscores
     return semAcento.toLowerCase().replaceAll(' ', '_');
   }
 }
