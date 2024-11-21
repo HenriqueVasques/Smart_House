@@ -29,7 +29,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final FirebaseServicos _firebaseServicos = FirebaseServicos();
   final BluetoothServicos _bluetoothServicos = BluetoothServicos();
-  String bluetoothStatus = 'Verificando Bluetooth...';
 
   @override
   void initState() {
@@ -39,11 +38,7 @@ class _HomePageState extends State<HomePage> {
 
   // Função para verificar se o Bluetooth está disponível
   Future<void> _checkBluetoothAvailability() async {
-    bool isAvailable = await FlutterBlue.instance.isAvailable;
-    setState(() {
-      bluetoothStatus = isAvailable ? 'Bluetooth disponível' : 'Bluetooth não disponível';
-    });
-    print(bluetoothStatus); // Exibindo no console
+    await FlutterBlue.instance.isAvailable;
   }
 
   ///#endregion
@@ -95,8 +90,6 @@ class _HomePageState extends State<HomePage> {
             isBold: true),
         const SizedBox(height: 10),
         _buildRoomGrid(context),
-        const SizedBox(height: 20),
-        _buildText(bluetoothStatus, 16, Colors.white), // Exibe o status do Bluetooth
       ],
     );
   }
@@ -249,7 +242,6 @@ class _HomePageState extends State<HomePage> {
         }
 
         if (snapshot.hasError) {
-          print('Erro no FutureBuilder: ${snapshot.error}');
           return const Center(
               child: Text('Erro ao carregar cômodos',
                   style: TextStyle(color: Colors.white)));
@@ -410,7 +402,7 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.only(left: 40),
                     child: IconButton(
                       icon: const Icon(Icons.settings, color: Colors.white54),
-                      onPressed: () => print('Configurações pressionado'),
+                      onPressed: () => {},
                     ),
                   ),
                   const SizedBox(width: 60),
@@ -420,7 +412,6 @@ class _HomePageState extends State<HomePage> {
                       icon: const Icon(Icons.person, color: Colors.white54),
                       onPressed: () {
                         Navigator.pushNamed(context, '/');
-                        print('Perfil pressionado');
                       },
                     ),
                   ),
