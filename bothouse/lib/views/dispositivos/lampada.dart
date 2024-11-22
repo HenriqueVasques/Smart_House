@@ -18,6 +18,7 @@ class LampadaPage extends StatefulWidget {
 
 class _LampadaPageState extends State<LampadaPage> {
   //#region Variáveis de Estado
+   final _bluetoothServicos = BluetoothServicos();
   String _corSelecionada = 'Branco';
   String _efeito = 'Nenhum';
   String _programacao = 'Off';
@@ -33,37 +34,21 @@ class _LampadaPageState extends State<LampadaPage> {
   }
 
   void _alternarPower() async {
-    final bluetoothServicos = BluetoothServicos();
-    
-    setState(() {
-      _isPowerOn = !_isPowerOn;
-    });
-
-    // try {
-    //   bool success = false;
-    //   if (_isPowerOn) {
-    //     success = await bluetoothServicos.turnOnLED();
-    //   } else {
-    //     success = await bluetoothServicos.turnOffLED();
-    //   }
-
-    //   if (!success) {
-    //     // Reverte o estado se o comando falhar
-    //     setState(() {
-    //       _isPowerOn = !_isPowerOn;
-    //     });
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text('Erro ao enviar comando para o dispositivo')),
-    //     );
-    //   }
-    // } catch (e) {
-    //   setState(() {
-    //     _isPowerOn = !_isPowerOn;
-    //   });
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Erro: $e')),
-    //   );
-    // }
+    try {
+      if (_isPowerOn) {
+        await _bluetoothServicos.turnOffLED();
+      } else {
+        await _bluetoothServicos.turnOnLED();
+      }
+      
+      setState(() {
+        _isPowerOn = !_isPowerOn;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar comando: $e')),
+      );
+    }
   }
 
   void _atualizarCor(String cor) {

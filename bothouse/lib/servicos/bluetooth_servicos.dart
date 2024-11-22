@@ -176,28 +176,30 @@ class BluetoothServicos {
   }
 
   // Método genérico para enviar comandos
- Future<bool> sendCommand(String command) async {
-  if (!(_connection?.isConnected ?? false)) return false;
-
-  try {
-    print('Enviando comando: $command');
-    Uint8List bytes = Uint8List.fromList(ascii.encode('$command\n'));
-    _connection!.output.add(bytes);
-    await _connection!.output.allSent;
-    return true;
-  } catch (e) {
-    print('Erro ao enviar comando: $e');
-    return false;
+ Future<void> sendCommand(String command) async {
+    try {
+      _connection?.output.add(ascii.encode(command));
+      await _connection?.output.allSent;
+    } catch (e) {
+      print('Erro ao enviar comando: $e');
+    }
   }
-}
 
 
+Future<void> turnOnLED() async {
+    if (_isConnected) {
+      await sendCommand('L');
+    }
+  }
+
+  // Enviar comando para desligar LED
+  Future<void> turnOffLED() async {
+    if (_isConnected) {
+      await sendCommand('D');
+    }
+  }
 
 
   // Método para verificar se está conectado
-  bool isConnected() {
-    return _isConnected && (_connection?.isConnected ?? false);
-  }
-
-  // Método para limpar recursos
+   bool get isConnected => _isConnected;
 }
