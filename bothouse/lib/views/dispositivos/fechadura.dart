@@ -16,7 +16,6 @@ class FechaduraPage extends StatefulWidget {
 
 class _FechaduraPageState extends State<FechaduraPage> {
   //#region Variáveis de Estado
-  String _modo = 'Normal';
   String _autoLock = '30s';
   bool _isLocked = true;
   bool _silentMode = false;
@@ -39,12 +38,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
   void _atualizarAutoLock(String novoTimer) {
     setState(() {
       _autoLock = novoTimer;
-    });
-  }
-
-  void _atualizarModo(String novoModo) {
-    setState(() {
-      _modo = novoModo;
     });
   }
 
@@ -134,7 +127,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
           Expanded(
             child: Row(
               children: [
-                _buildBotaoGrid('Modo', _modo, ['Normal', 'Viagem', 'Convidado', 'Emergência'], _atualizarModo),
                 _buildBotaoSilencioso(),
                 _buildBotaoGrid('Auto Lock', _autoLock, ['Off', '30s', '1min', '5min'], _atualizarAutoLock),
               ],
@@ -231,15 +223,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Modo: $_modo | Auto Lock: $_autoLock | Volume: $_volumeTexto | Status: ${_isLocked ? "Trancado" : "Destrancado"}',
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 13,
-          height: 1.2,
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }

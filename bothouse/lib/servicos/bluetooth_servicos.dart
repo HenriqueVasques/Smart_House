@@ -1,15 +1,27 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothServicos {
+  // Instâncias e variáveis
   FlutterBluetoothSerial bluetooth = FlutterBluetoothSerial.instance;
   BluetoothDevice? connectedDevice;
   BluetoothConnection? _connection;
-  
+  bool _isConnected = false;
+  Timer? _keepAliveTimer;
+  static const Duration RECONNECT_DELAY = Duration(milliseconds: 500);
+  static const Duration KEEP_ALIVE_INTERVAL = Duration(seconds: 10);
+
+  // Controllers para streams
   final _connectionStateController = StreamController<bool>.broadcast();
   Stream<bool> get connectionState => _connectionStateController.stream;
 
+  final _responseController = StreamController<String>.broadcast();
+  Stream<String> get deviceResponse => _responseController.stream;
+
+  // Permissões necessárias
   Future<void> requestPermissions() async {
     await Permission.bluetooth.request();
     await Permission.bluetoothScan.request();
@@ -17,87 +29,175 @@ class BluetoothServicos {
     await Permission.location.request();
   }
 
+  // Método para verificar se o Bluetooth está ligado
+  Future<bool> isBluetoothEnabled() async {
+    return await bluetooth.isEnabled ?? false;
+  }
+
+  // Método para ligar o Bluetooth
+  Future<bool> enableBluetooth() async {
+    return await bluetooth.requestEnable() ?? false;
+  }
+
+  // Método para escanear dispositivos
   Future<List<BluetoothDevice>> scanDevices() async {
     await requestPermissions();
-    
-    if (!(await bluetooth.isEnabled ?? false)) {
-      await bluetooth.requestEnable();
+
+    if (!(await isBluetoothEnabled())) {
+      await enableBluetooth();
     }
 
     List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
-    
+
     try {
-      StreamSubscription? discoverySubscription = bluetooth.startDiscovery().listen(
+      print('Iniciando descoberta de dispositivos...');
+      StreamSubscription? discoverySubscription =
+          bluetooth.startDiscovery().listen(
         (r) {
-          if (!devices.any((device) => device.address == r.device.address)) {
-            devices.add(r.device);
+          final device = r.device;
+          print(
+              'Dispositivo encontrado: ${device.name ?? "Sem nome"} (${device.address})');
+          if (!devices.any((d) => d.address == device.address)) {
+            devices.add(device);
           }
+        },
+        onError: (error) {
+          print('Erro durante a descoberta: $error');
         },
         cancelOnError: true,
       );
 
       await Future.delayed(const Duration(seconds: 12));
       await discoverySubscription.cancel();
+      print('Descoberta finalizada. Total de dispositivos: ${devices.length}');
 
       return devices;
     } catch (e) {
+      print('Erro ao escanear dispositivos: $e');
       return devices;
     }
   }
 
+    // Conecta ao dispositivo
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
-      final bondedDevices = await bluetooth.getBondedDevices();
-      if (!bondedDevices.any((d) => d.address == device.address)) {
-        final bondResult = await bluetooth.bondDeviceAtAddress(device.address);
-        if (bondResult != true) {
-          return false;
-        }
-        await Future.delayed(const Duration(seconds: 2));
-      }
-
-      await _connection?.finish();
-
+      connectedDevice = device;
       _connection = await BluetoothConnection.toAddress(device.address)
-        .timeout(const Duration(seconds: 15), onTimeout: () {
-          throw Exception("Timeout ao tentar conectar ao dispositivo Bluetooth");
-        });
+          .timeout(const Duration(seconds: 5));
 
       if (_connection?.isConnected ?? false) {
-        connectedDevice = device;
+        _isConnected = true;
         _connectionStateController.add(true);
-        
-        _connection?.input?.listen(
-          (data) => {},
-          onDone: () => _handleDisconnection(),
-          onError: (error) {
-            _handleDisconnection();
-          },
-          cancelOnError: true,
-        );
-
+        _setupListener();
+        _startKeepAlive();
         return true;
       }
 
       return false;
     } catch (e) {
+      print('Erro ao conectar: $e');
       return false;
     }
   }
 
-  void _handleDisconnection() {
-    _connection = null;
-    connectedDevice = null;
-    _connectionStateController.add(false);
+  Future<bool> _establishConnection() async {
+    if (connectedDevice == null) return false;
+
+    try {
+      _connection = await BluetoothConnection.toAddress(connectedDevice!.address)
+          .timeout(const Duration(seconds: 5));
+
+      if (_connection?.isConnected ?? false) {
+        print('Conexão estabelecida com sucesso');
+        _isConnected = true;
+        _connectionStateController.add(true);
+
+        // Configurar listener e iniciar keep-alive
+        _setupListener();
+        _startKeepAlive();
+        
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('Erro ao estabelecer conexão: $e');
+      return false;
+    }
   }
 
-  Future<void> desconectar() async {
-    await _connection?.finish();
-    _handleDisconnection();
+  // Método que configura o listener de dados recebidos
+  
+  // Configura o listener para dados recebidos
+  void _setupListener() {
+    _connection?.input?.listen(
+      (data) {
+        String response = ascii.decode(data).trim();
+        print('Recebido do Arduino: $response');
+        if (response == "K") {
+          sendCommand("A");
+          print('Respondido com "A"');
+        } else {
+          print('Mensagem desconhecida: $response');
+        }
+      },
+      onError: (error) {
+        print('Erro na conexão: $error');
+        _stopKeepAlive();
+      },
+      onDone: () {
+        print('Conexão encerrada pelo dispositivo');
+        _stopKeepAlive();
+      },
+      cancelOnError: false,
+    );
   }
 
-  Future<void> dispose() async {
-    await desconectar();
-    await _connectionStateController.close();
+
+
+
+  // Iniciar o keep-alive
+  void _startKeepAlive() {
+    _keepAliveTimer = Timer.periodic(KEEP_ALIVE_INTERVAL, (timer) async {
+      if (_isConnected && (_connection?.isConnected ?? false)) {
+        print('Enviando A');
+        await sendCommand('A');
+      } else {
+        print('Conexão perdida, encerrando keep-alive');
+        _stopKeepAlive();
+      }
+    });
   }
+
+  // Parar o keep-alive
+  void _stopKeepAlive() {
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = null;
+  }
+
+  // Método genérico para enviar comandos
+ Future<bool> sendCommand(String command) async {
+  if (!(_connection?.isConnected ?? false)) return false;
+
+  try {
+    print('Enviando comando: $command');
+    Uint8List bytes = Uint8List.fromList(ascii.encode('$command\n'));
+    _connection!.output.add(bytes);
+    await _connection!.output.allSent;
+    return true;
+  } catch (e) {
+    print('Erro ao enviar comando: $e');
+    return false;
+  }
+}
+
+
+
+
+  // Método para verificar se está conectado
+  bool isConnected() {
+    return _isConnected && (_connection?.isConnected ?? false);
+  }
+
+  // Método para limpar recursos
 }

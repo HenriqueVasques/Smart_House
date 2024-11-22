@@ -16,13 +16,9 @@ class JanelaPage extends StatefulWidget {
 
 class _JanelaPageState extends State<JanelaPage> {
   //#region Variáveis de Estado
-  String _modo = 'Manual';
   String _abertura = '50%';
   bool _isClosed = true;
-  bool _autoMode = false;
   double _aberturaSlider = 50; 
-  bool _cortinasAtivadas = true;
-  bool _travada = false;
   //#endregion
 
   //#region Métodos de Atualização
@@ -36,30 +32,6 @@ class _JanelaPageState extends State<JanelaPage> {
         _aberturaSlider = 100;
         _abertura = '100%';
       }
-    });
-  }
-
-  void _alternarModoAutomatico() {
-    setState(() {
-      _autoMode = !_autoMode;
-    });
-  }
-
-  void _alternarCortinas() {
-    setState(() {
-      _cortinasAtivadas = !_cortinasAtivadas;
-    });
-  }
-
-  void _alternarTrava() {
-    setState(() {
-      _travada = !_travada;
-    });
-  }
-
-  void _atualizarModo(String novoModo) {
-    setState(() {
-      _modo = novoModo;
     });
   }
 
@@ -85,13 +57,10 @@ class _JanelaPageState extends State<JanelaPage> {
             const SizedBox(height: 50),
             _buildIconePrincipal(),
             const SizedBox(height: 60),
-            _buildInfoText(),
-            const SizedBox(height: 20),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildGridBotoes(),
                   _buildSliderAbertura(),
                   _buildBotaoJanela(),
                   const SizedBox(height: 20),
@@ -136,31 +105,6 @@ class _JanelaPageState extends State<JanelaPage> {
     );
   }
 
-  Widget _buildGridBotoes() {
-    return Container(
-      height: 280,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                _buildBotaoGrid(
-                  'Modo', 
-                  _modo, 
-                  ['Manual', 'Programado', 'Clima', 'Energia'], 
-                  _atualizarModo
-                ),
-                _buildBotaoAutomatico(),
-                _buildBotaoCortinas(),
-                _buildBotaoTrava(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBotaoGrid(String titulo, String valorAtual, List<String> opcoes, Function(String) onChanged) {
     return Expanded(
       child: Padding(
@@ -193,157 +137,6 @@ class _JanelaPageState extends State<JanelaPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBotaoAutomatico() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: _alternarModoAutomatico,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-              border: _autoMode ? Border.all(color: Colors.blue, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Auto',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Icon(
-                  _autoMode ? Icons.auto_mode : Icons.auto_mode_outlined,
-                  color: _autoMode ? Colors.blue : Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _autoMode ? 'ON' : 'OFF',
-                  style: TextStyle(
-                    color: _autoMode ? Colors.blue : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBotaoCortinas() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: _alternarCortinas,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-              border: _cortinasAtivadas ? Border.all(color: Colors.purple, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Cortinas',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Icon(
-                  _cortinasAtivadas ? Icons.curtains : Icons.curtains_outlined,
-                  color: _cortinasAtivadas ? Colors.purple : Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _cortinasAtivadas ? 'ON' : 'OFF',
-                  style: TextStyle(
-                    color: _cortinasAtivadas ? Colors.purple : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBotaoTrava() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: _alternarTrava,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-              border: _travada ? Border.all(color: Colors.orange, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Trava',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Icon(
-                  _travada ? Icons.lock : Icons.lock_open,
-                  color: _travada ? Colors.orange : Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _travada ? 'ON' : 'OFF',
-                  style: TextStyle(
-                    color: _travada ? Colors.orange : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoText() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Modo: $_modo | Abertura: $_abertura | ' +
-        'Cortinas: ${_cortinasAtivadas ? "Ativadas" : "Desativadas"} | ' +
-        'Trava: ${_travada ? "Ativada" : "Desativada"}',
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 13,
-          height: 1.2,
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }

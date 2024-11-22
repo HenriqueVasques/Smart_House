@@ -21,11 +21,11 @@ class _BluetoothDialogState extends State<BluetoothDialog> {
     _scanDevices();
   }
 
-  @override
-  void dispose() {
-    _bluetoothServicos.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _bluetoothServicos.dispose();
+  //   super.dispose();
+  // }
 
   // Função para escanear dispositivos
   Future<void> _scanDevices() async {

@@ -1,3 +1,4 @@
+import 'package:bothouse/servicos/bluetooth_servicos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart'; 
 
@@ -31,10 +32,38 @@ class _LampadaPageState extends State<LampadaPage> {
     });
   }
 
-  void _alternarPower() {
+  void _alternarPower() async {
+    final bluetoothServicos = BluetoothServicos();
+    
     setState(() {
       _isPowerOn = !_isPowerOn;
     });
+
+    // try {
+    //   bool success = false;
+    //   if (_isPowerOn) {
+    //     success = await bluetoothServicos.turnOnLED();
+    //   } else {
+    //     success = await bluetoothServicos.turnOffLED();
+    //   }
+
+    //   if (!success) {
+    //     // Reverte o estado se o comando falhar
+    //     setState(() {
+    //       _isPowerOn = !_isPowerOn;
+    //     });
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text('Erro ao enviar comando para o dispositivo')),
+    //     );
+    //   }
+    // } catch (e) {
+    //   setState(() {
+    //     _isPowerOn = !_isPowerOn;
+    //   });
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Erro: $e')),
+    //   );
+    // }
   }
 
   void _atualizarCor(String cor) {
