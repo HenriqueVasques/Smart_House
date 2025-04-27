@@ -1,43 +1,66 @@
-  // ar_condicionado.dart
-  import 'package:flutter/material.dart';
-  import 'package:flutter/cupertino.dart'; // TODO: Adicionado para o CupertinoSwitch
+// ar_condicionado.dart
+//#region Imports
+import 'package:bothouse/servicos/wifi_servicos.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+//#endregion
 
-  class ArCondicionadoPage extends StatefulWidget {
-    final String comodoId;
-    final String dispositivoNome;
+//#region ArCondicionadoPage
+class ArCondicionadoPage extends StatefulWidget {
+  final String comodoId;
+  final String dispositivoNome;
 
-    const ArCondicionadoPage({
-      Key? key, 
-      required this.comodoId,
-      required this.dispositivoNome,
-    }) : super(key: key);
+  const ArCondicionadoPage({
+    Key? key, 
+    required this.comodoId,
+    required this.dispositivoNome,
+  }) : super(key: key);
 
-    @override
-    State<ArCondicionadoPage> createState() => _ArCondicionadoPageState();
+  @override
+  State<ArCondicionadoPage> createState() => _ArCondicionadoPageState();
+}
+//#endregion
+
+//#region State
+class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
+  //#region Variáveis de Estado
+  final WifiServicos _wifiServicos = WifiServicos();
+
+  String _modoSelecionado = 'Cool';
+  String _velocidade = 'Média';
+  String _timer = 'Off';
+  double _temperatura = 23;
+  bool _isPowerOn = false;
+  //#endregion
+    
+
+  //#region Métodos de Atualização
+  void _atualizarTemperatura(double novaTemp) {
+    setState(() {
+      _temperatura = novaTemp;
+    });
   }
 
-  class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
-    //#region Variáveis de Estado
-    String _modoSelecionado = 'Cool';
-    String _velocidade = 'Média';
-    String _timer = 'Off';
-    double _temperatura = 23;
-    bool _isPowerOn = false;
-    //#endregion
-
-    //#region Métodos de Atualização
-    void _atualizarTemperatura(double novaTemp) {
-      setState(() {
-        _temperatura = novaTemp;
-      });
-    }
-
-    void _alternarPower() {
+    //#region Alternar Power com comando dinâmico
+    Future<void> _alternarPower() async {
       setState(() {
         _isPowerOn = !_isPowerOn;
       });
-    }
 
+      List<String> listaCaracteres = _isPowerOn
+          ? ['F', 'K', '9', '!', 'r', '+', 'k'] // Caracteres para LIGAR o ar
+          : ['p', '8', '%', '~', 's', '{', '4']; // Caracteres para DESLIGAR o ar
+
+      // Escolhe um caractere aleatório da lista
+      String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+      await _wifiServicos.enviarComando(
+        rotaCodificada: 'dr38', // Rota codificada do ar-condicionado no ESP32
+        caractereChave: caractereSelecionado,
+      );
+    }
+    //#endregion
+    
     void _atualizarModo(String modo) {
       setState(() {
         _modoSelecionado = modo;
@@ -361,3 +384,4 @@
     }
     //#endregion
   }
+  

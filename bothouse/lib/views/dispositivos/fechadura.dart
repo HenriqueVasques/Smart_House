@@ -1,11 +1,14 @@
+//#region Imports
+import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+//#endregion
 
 class FechaduraPage extends StatefulWidget {
   final String comodoId;
   final String dispositivoNome;
 
   const FechaduraPage({
-    Key? key, 
+    Key? key,
     required this.comodoId,
     required this.dispositivoNome,
   }) : super(key: key);
@@ -16,17 +19,30 @@ class FechaduraPage extends StatefulWidget {
 
 class _FechaduraPageState extends State<FechaduraPage> {
   //#region Variáveis de Estado
+  final WifiServicos _wifiServicos = WifiServicos();
+
   String _autoLock = '30s';
   bool _isLocked = true;
   bool _silentMode = false;
-  double _volumeSlider = 2; 
+  double _volumeSlider = 2;
   //#endregion
 
   //#region Métodos de Atualização
-  void _alternarFechadura() {
+  Future<void> _alternarFechadura() async {
     setState(() {
       _isLocked = !_isLocked;
     });
+
+    List<String> listaCaracteres = _isLocked
+        ? ['Z', '#', '9', 'x', '\$', '%', '2'] // Trancar (fechar)
+        : ['G', 'M', '!', '0', '@', 'a', '&']; // Destrancar (abrir)
+
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'by03', // Rota codificada da fechadura no ESP32
+      caractereChave: caractereSelecionado,
+    );
   }
 
   void _alternarModoSilencioso() {
@@ -55,7 +71,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
   }
   //#endregion
 
-  //#region Método Principal de Build
+  //#region Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +104,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
   }
   //#endregion
 
-  //#region Componentes da Interface
+  //#region AppBar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 39, 32, 32),
@@ -101,16 +117,15 @@ class _FechaduraPageState extends State<FechaduraPage> {
         children: [
           Icon(Icons.lock, color: Colors.white),
           SizedBox(width: 10),
-          Text(
-            'Fechadura',
-            style: TextStyle(color: Colors.white),
-          ),
+          Text('Fechadura', style: TextStyle(color: Colors.white)),
         ],
       ),
       centerTitle: true,
     );
   }
+  //#endregion
 
+  //#region Widgets da Tela
   Widget _buildIconePrincipal() {
     return Icon(
       _isLocked ? Icons.lock : Icons.lock_open,
@@ -145,7 +160,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
           onTap: () {
             int index = opcoes.indexOf(valorAtual);
             String novoValor = opcoes[(index + 1) % opcoes.length];
-            onChanged(novoValor);          
+            onChanged(novoValor);
           },
           child: Container(
             height: 100,
@@ -189,10 +204,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Modo Silencioso',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+                const Text('Modo Silencioso', style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 2),
                 Icon(
                   _silentMode ? Icons.volume_off : Icons.volume_up,

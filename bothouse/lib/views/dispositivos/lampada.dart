@@ -1,13 +1,14 @@
-import 'package:bothouse/servicos/bluetooth_servicos.dart';
+//#region Imports
+import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; 
+//#endregion
 
 class LampadaPage extends StatefulWidget {
   final String comodoId;
   final String dispositivoNome;
 
   const LampadaPage({
-    Key? key, 
+    Key? key,
     required this.comodoId,
     required this.dispositivoNome,
   }) : super(key: key);
@@ -18,56 +19,42 @@ class LampadaPage extends StatefulWidget {
 
 class _LampadaPageState extends State<LampadaPage> {
   //#region Variáveis de Estado
-   final _bluetoothServicos = BluetoothServicos();
-  String _corSelecionada = 'Branco';
-  String _efeito = 'Nenhum';
-  String _programacao = 'Off';
+  final WifiServicos _wifiServicos = WifiServicos();
+
   double _intensidade = 70;
   bool _isPowerOn = false;
   //#endregion
 
   //#region Métodos de Atualização
-  void _atualizarIntensidade(double novaIntensidade) {
+  Future<void> _alternarPower() async {
     setState(() {
-      _intensidade = novaIntensidade.clamp(0, 100);
+      _isPowerOn = !_isPowerOn;
     });
+
+    List<String> listaCaracteres = _isPowerOn
+        ? ['T', 'K', '3', 'P', 'r', '+', 'H'] // Caracteres para LIGAR a lâmpada
+        : ['D', '8', '!', '~', 'Y', '{', '4']; // Caracteres para DESLIGAR a lâmpada
+
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'tf52', // Rota codificada da lâmpada no ESP32
+      caractereChave: caractereSelecionado,
+    );
   }
 
-  void _alternarPower() async {
-    try {
-      if (_isPowerOn) {
-        await _bluetoothServicos.turnOffLED();
-      } else {
-        await _bluetoothServicos.turnOnLED();
-      }
-      
-      setState(() {
-        _isPowerOn = !_isPowerOn;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar comando: $e')),
-      );
-    }
-  }
+ void _atualizarIntensidade(double novaIntensidade) async {
+  setState(() {
+    _intensidade = novaIntensidade.clamp(0, 100);
+  });
 
-  void _atualizarCor(String cor) {
-    setState(() {
-      _corSelecionada = cor;
-    });
-  }
+  int valorPWM = (_intensidade / 100 * 255).toInt(); // Converter para 0-255
 
-  void _atualizarEfeito(String efeito) {
-    setState(() {
-      _efeito = efeito;
-    });
-  }
-
-  void _atualizarProgramacao(String programacao) {
-    setState(() {
-      _programacao = programacao;
-    });
-  }
+  await _wifiServicos.enviarValor(
+    rotaCodificada: 'tf52', // rota codificada da lâmpada
+    valor: valorPWM, 
+  );
+}
   //#endregion
 
   //#region Método Principal de Build
@@ -134,20 +121,22 @@ class _LampadaPageState extends State<LampadaPage> {
     );
   }
 
+  Widget _buildInfoText() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
   Widget _buildGridBotoes() {
     return Container(
       height: 280,
       child: Column(
         children: [
-          Expanded(
-            child: Row(
-              children: [
-                _buildBotaoGrid('Cor', _corSelecionada, ['Branco', 'Amarelo', 'Azul', 'Verde'], _atualizarCor),
-                _buildBotaoGrid('Efeito', _efeito, ['Nenhum', 'Pulsar', 'Rainbow', 'Festa'], _atualizarEfeito),
-                _buildBotaoGrid('Timer', _programacao, ['Off', '30min', '1h', '2h'], _atualizarProgramacao),
-              ],
-            ),
-          ),
           const SizedBox(height: 10),
           _buildBotaoIntensidade(),
         ],
@@ -163,7 +152,7 @@ class _LampadaPageState extends State<LampadaPage> {
           onTap: () {
             int index = opcoes.indexOf(valorAtual);
             String novoValor = opcoes[(index + 1) % opcoes.length];
-            onChanged(novoValor);          
+            onChanged(novoValor);
           },
           child: Container(
             height: 100,
@@ -224,26 +213,6 @@ class _LampadaPageState extends State<LampadaPage> {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInfoText() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Cor: $_corSelecionada | Efeito: $_efeito | Timer: $_programacao',
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 13,
-          height: 1.2,
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }

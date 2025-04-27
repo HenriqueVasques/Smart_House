@@ -1,11 +1,14 @@
+//#region Imports
+import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+//#endregion
 
 class JanelaPage extends StatefulWidget {
   final String comodoId;
   final String dispositivoNome;
 
   const JanelaPage({
-    Key? key, 
+    Key? key,
     required this.comodoId,
     required this.dispositivoNome,
   }) : super(key: key);
@@ -16,13 +19,15 @@ class JanelaPage extends StatefulWidget {
 
 class _JanelaPageState extends State<JanelaPage> {
   //#region Variáveis de Estado
+  final WifiServicos _wifiServicos = WifiServicos();
+
   String _abertura = '50%';
   bool _isClosed = true;
-  double _aberturaSlider = 50; 
+  double _aberturaSlider = 50;
   //#endregion
 
   //#region Métodos de Atualização
-  void _alternarJanela() {
+  Future<void> _alternarJanela() async {
     setState(() {
       _isClosed = !_isClosed;
       if (_isClosed) {
@@ -33,6 +38,17 @@ class _JanelaPageState extends State<JanelaPage> {
         _abertura = '100%';
       }
     });
+
+    List<String> listaCaracteres = _isClosed
+        ? ['Q', 'E', 'L', '1', '(', '=', ']'] // Fechar a janela
+        : ['U', 'V', 'W', '*', 'b', 'N', '^']; // Abrir a janela
+
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'gh77', // Rota codificada da Janela no ESP32
+      caractereChave: caractereSelecionado,
+    );
   }
 
   void _atualizarAbertura(double novoValor) {
@@ -102,42 +118,6 @@ class _JanelaPageState extends State<JanelaPage> {
       _isClosed ? Icons.window : Icons.window_outlined,
       size: 60,
       color: _isClosed ? Colors.red : Colors.green,
-    );
-  }
-
-  Widget _buildBotaoGrid(String titulo, String valorAtual, List<String> opcoes, Function(String) onChanged) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: () {
-            int index = opcoes.indexOf(valorAtual);
-            String novoValor = opcoes[(index + 1) % opcoes.length];
-            onChanged(novoValor);          
-          },
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  titulo,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  valorAtual,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 

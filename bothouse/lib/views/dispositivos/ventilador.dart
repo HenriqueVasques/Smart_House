@@ -1,3 +1,5 @@
+//ventilador.dart
+import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
 
 class VentiladorPage extends StatefulWidget {
@@ -16,43 +18,44 @@ class VentiladorPage extends StatefulWidget {
 
 class _VentiladorPageState extends State<VentiladorPage> {
   //#region Variáveis de Estado
-  double _velocidadeSlider = 2; // 1-3 representando Baixa, Média, Alta
-  String _modo = 'Normal';
-  String _timer = 'Desligado';
+  final WifiServicos _wifiServicos = WifiServicos(); 
+  double _velocidadeSlider = 1; // 1-3 representando Baixa, Média, Alta
   bool _isPowerOn = false;
-  bool _isOscilando = false;
   //#endregion
 
   //#region Métodos de Atualização
-  void _atualizarVelocidade(double novaVelocidade) {
-    setState(() {
-      _velocidadeSlider = novaVelocidade;
-    });
-  }
+  void _atualizarVelocidade(double novaVelocidade) async {
+  setState(() {
+    _velocidadeSlider = novaVelocidade;
+  });
 
-  void _alternarOscilacao() {
-    setState(() {
-      _isOscilando = !_isOscilando;
-    });
-  }
+  int valorVelocidade = novaVelocidade.toInt(); // 1, 2 ou 3
 
-  void _atualizarTimer(String novoTimer) {
-    setState(() {
-      _timer = novoTimer;
-    });
-  }
+  await _wifiServicos.enviarValor(
+    rotaCodificada: 'hv21', // rota do ventilador
+    valor: valorVelocidade,
+  );
+}
 
-  void _atualizarModo(String novoModo) {
-    setState(() {
-      _modo = novoModo;
-    });
-  }
+  //#region Alternar Power com comando dinâmico
+    Future<void> _alternarPower() async {
+      setState(() {
+        _isPowerOn = !_isPowerOn;
+      });
 
-  void _alternarPower() {
-    setState(() {
-      _isPowerOn = !_isPowerOn;
-    });
-  }
+      List<String> listaCaracteres = _isPowerOn
+          ? ['h', 'o', '9', '#', 'r', '6', 'F'] // Caracteres para LIGAR o ventilador
+          : ['G', ',', '%', '~','T', 'j', '5']; // Caracteres para DESLIGAR o ventilador
+
+      // Escolhe um caractere aleatório da lista
+      String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+      await _wifiServicos.enviarComando(
+        rotaCodificada: 'hv21', // Rota codificada do ar-condicionado no ESP32
+        caractereChave: caractereSelecionado,
+      );
+    }
+    //#endregion
 
   String get _velocidadeTexto {
     if (_velocidadeSlider <= 1.5) return 'Baixa';
@@ -71,8 +74,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            const SizedBox(height: 50),
-            _buildIconePrincipal(),
             const SizedBox(height: 60),
             _buildInfoText(),
             const SizedBox(height: 20),
@@ -80,7 +81,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildGridBotoes(),
                   _buildSliderVelocidade(),
                   _buildBotaoPower(),
                   const SizedBox(height: 20),
@@ -114,37 +114,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
         ],
       ),
       centerTitle: true,
-    );
-  }
-
-  Widget _buildIconePrincipal() {
-    return AnimatedRotation(
-      duration: const Duration(seconds: 3),
-      turns: _isPowerOn && _isOscilando ? 1 : 0,
-      child: const Icon(
-        Icons.air,
-        size: 60,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildGridBotoes() {
-    return Container(
-      height: 280,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                _buildBotaoGrid('Modo', _modo, ['Normal', 'Natural', 'Noturno', 'Eco'], _atualizarModo),
-                _buildBotaoOscilacao(),
-                _buildBotaoGrid('Timer', _timer, ['Desligado', '30min', '1h', '2h', '4h'], _atualizarTimer),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -184,49 +153,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
     );
   }
 
-  Widget _buildBotaoOscilacao() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: _alternarOscilacao,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-              border: _isOscilando ? Border.all(color: Colors.blue, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Oscilação',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Icon(
-                  Icons.sync,
-                  color: _isOscilando ? Colors.blue : Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isOscilando ? 'ON' : 'OFF',
-                  style: TextStyle(
-                    color: _isOscilando ? Colors.blue : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoText() {
     return Container(
       width: double.infinity,
@@ -234,15 +160,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Modo: $_modo | Velocidade: $_velocidadeTexto | Timer: $_timer | Oscilação: ${_isOscilando ? "On" : "Off"}',
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 13,
-          height: 1.2,
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }

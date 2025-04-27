@@ -1,11 +1,13 @@
+//#region Imports
 import 'package:bothouse/servicos/firebase_servicos.dart';
+import 'package:bothouse/servicos/controlador_dispositivos.dart';
+import 'package:flutter/material.dart';
 import 'package:bothouse/views/dispositivos/ar_condicionado_page.dart';
 import 'package:bothouse/views/dispositivos/fechadura.dart';
 import 'package:bothouse/views/dispositivos/janela.dart';
 import 'package:bothouse/views/dispositivos/lampada.dart';
 import 'package:bothouse/views/dispositivos/ventilador.dart';
-import 'package:flutter/material.dart';
-
+//#endregion
 class ControlPage extends StatefulWidget {
   final String comodoId;
   final String nomeComodo;
@@ -102,61 +104,9 @@ class _ControlPageState extends State<ControlPage> {
   //#endregion
 
   //#region Device Card
- Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
+Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
   return GestureDetector(
-    onTap: () {
-      if (dispositivo.nome == "Ar_Condicionado") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArCondicionadoPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      } else if (dispositivo.nome == "Lampada") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LampadaPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      } else if (dispositivo.nome == "Ventilador") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VentiladorPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      } else if (dispositivo.nome == "Fechadura") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FechaduraPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      } else if (dispositivo.nome == "Janela") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JanelaPage(
-              comodoId: widget.comodoId,
-              dispositivoNome: dispositivo.nome,
-            ),
-          ),
-        );
-      }
-    },
+    onTap: () => _handleDispositivo(dispositivo.nome), // AQUI AGORA
     child: Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -187,11 +137,7 @@ class _ControlPageState extends State<ControlPage> {
             width: 67,
             height: 67,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.device_unknown,
-                color: Colors.white,
-                size: 60,
-              );
+              return const Icon(Icons.device_unknown, color: Colors.white, size: 60);
             },
           ),
         ],
@@ -199,6 +145,31 @@ class _ControlPageState extends State<ControlPage> {
     ),
   );
 }
+
+
+ //#region Handler dos Dispositivos
+  void _handleDispositivo(String nome) {
+    switch (nome) {
+      case "Fechadura":
+        Navigator.push(context, MaterialPageRoute(builder: (context) => FechaduraPage(comodoId: widget.comodoId, dispositivoNome: nome)));
+        break;
+      case "Janela":
+        Navigator.push(context, MaterialPageRoute(builder: (context) => JanelaPage(comodoId: widget.comodoId, dispositivoNome: nome)));
+        break;
+      case "Lampada":
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LampadaPage(comodoId: widget.comodoId, dispositivoNome: nome)));
+        break;
+      case "Ventilador":
+        Navigator.push(context, MaterialPageRoute(builder: (context) => VentiladorPage(comodoId: widget.comodoId, dispositivoNome: nome)));
+        break;
+      case "Ar_Condicionado":
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ArCondicionadoPage(comodoId: widget.comodoId, dispositivoNome: nome)));
+        break;
+      default:
+        print('⚠️ Dispositivo não reconhecido: $nome');
+    }
+  }
+  //#endregion
 
   //#endregion
 }

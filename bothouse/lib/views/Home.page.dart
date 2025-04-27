@@ -2,8 +2,7 @@
   import 'package:bothouse/views/control.page.dart';
   import 'package:flutter/material.dart';
   import 'package:bothouse/servicos/firebase_servicos.dart';
-  import 'package:bothouse/widgets/bluetooth_dialog.dart';
-  import 'package:bothouse/servicos/bluetooth_servicos.dart';
+  import 'package:bothouse/servicos/wifi_servicos.dart';
   import 'package:flutter_blue/flutter_blue.dart';
 
   ///#region Classes
@@ -28,7 +27,7 @@
 
   class _HomePageState extends State<HomePage> {
     final FirebaseServicos _firebaseServicos = FirebaseServicos();
-    final BluetoothServicos _bluetoothServicos = BluetoothServicos();
+    final WifiServicos _wifiServicos = WifiServicos();
 
     @override
     void initState() {
@@ -351,103 +350,95 @@
 
     ///#endregion
 
-    ///#region Bluetooth Services
-    void _handleBluetoothError(BuildContext context, dynamic error) {
+///#region Wi-Fi Services
+Future<void> _handleWifiStatus(BuildContext context) async {
+  try {
+    final wifiServicos = WifiServicos();
+    final testeConexao = await wifiServicos.testarConexao();
+
+    if (testeConexao) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro de Bluetooth: $error')),
+        const SnackBar(content: Text('Conectado ao ESP32 com sucesso!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: Não foi possível alcançar o ESP32')),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro de Wi-Fi: $e')),
+    );
+  }
+}
+///#endregion
 
-    Future<void> _handleBluetoothConnection(BuildContext context) async {
-      try {
-        if (_bluetoothServicos.connectedDevice != null) {
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Dispositivo desconectado')),
-          );
-        } else {
-          final result = await showDialog(
-            context: context,
-            builder: (context) => const BluetoothDialog(),
-          );
-          if (result == true) {
-          }
-        }
-      } catch (e) {
-        _handleBluetoothError(context, e);
-      }
-    }
-
-    ///#endregion
-
-    ///#region Barra de Navegação
-    Widget _buildBottomNavigationBar(BuildContext context) {
-      return SizedBox(
-        height: 65, 
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 70,
-                decoration: BoxDecoration(color: Colors.grey[900]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 40),
-                      child: IconButton(
-                        icon: const Icon(Icons.settings, color: Colors.white54),
-                        onPressed: () => {},
-                      ),
-                    ),
-                    const SizedBox(width: 60),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 40),
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Colors.white54),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/');
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _handleBluetoothConnection(context),
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    height: 60,
-                    width: 60,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
-                    ),
-                    child: Icon(
-                      _bluetoothServicos.connectedDevice != null
-                          ? Icons.bluetooth_connected
-                          : Icons.wifi,
-                      color: Colors.white,
-                      size: 30,
-                    ),
+///#region Bottom Navigation Bar
+Widget _buildBottomNavigationBar(BuildContext context) {
+  return SizedBox(
+    height: 65,
+    child: Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 70,
+            decoration: BoxDecoration(color: Colors.grey[900]),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 40),
+                  child: IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.white54),
+                    onPressed: () => {},
                   ),
                 ),
+                const SizedBox(width: 60),
+                Padding(
+                  padding: const EdgeInsets.only(right: 40),
+                  child: IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white54),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/');
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _handleWifiStatus(context),
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                height: 60,
+                width: 60,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue,
+                ),
+                child: const Icon(
+                  Icons.wifi, // sempre wifi agora
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      );
-    }
+      ],
+    ),
+  );
+}
+///#endregion
 
-    ///#endregion
   }
