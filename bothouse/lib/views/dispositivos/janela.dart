@@ -40,13 +40,13 @@ class _JanelaPageState extends State<JanelaPage> {
     });
 
     List<String> listaCaracteres = _isClosed
-        ? ['Q', 'E', 'L', '1', '(', '=', ']'] // Fechar a janela
-        : ['U', 'V', 'W', '*', 'b', 'N', '^']; // Abrir a janela
+        ? ['Q', 'E', 'L', '1', '(', '=', ']'] 
+        : ['U', 'V', 'W', '*', 'b', 'N', '^']; 
 
     String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
     await _wifiServicos.enviarComando(
-      rotaCodificada: 'gh77', // Rota codificada da Janela no ESP32
+      rotaCodificada: 'gh77',
       caractereChave: caractereSelecionado,
     );
   }

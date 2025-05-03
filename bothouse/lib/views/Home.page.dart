@@ -3,7 +3,10 @@
   import 'package:flutter/material.dart';
   import 'package:bothouse/servicos/firebase_servicos.dart';
   import 'package:bothouse/servicos/wifi_servicos.dart';
-  import 'package:flutter_blue/flutter_blue.dart';
+  import 'package:bothouse/servicos/clima_servico.dart';
+
+  double? _temperaturaCidade;
+  ClimaModel? _climaAtual;
 
   ///#region Classes
   class RoomData {
@@ -27,20 +30,32 @@
 
   class _HomePageState extends State<HomePage> {
     final FirebaseServicos _firebaseServicos = FirebaseServicos();
-    final WifiServicos _wifiServicos = WifiServicos();
+    final ClimaServico _climaServico = ClimaServico();
 
     @override
     void initState() {
       super.initState();
-      _checkBluetoothAvailability();
-    }
-
-    // Função para verificar se o Bluetooth está disponível
-    Future<void> _checkBluetoothAvailability() async {
-      await FlutterBlue.instance.isAvailable;
+      _carregarTemperatura();
     }
 
     ///#endregion
+
+    ///#region clima API
+    Future<void> _carregarTemperatura() async {
+      final clima = await _climaServico.buscarClimaAtual();
+      setState(() {
+        _climaAtual = clima;
+      });
+    }
+
+    ///#endregion
+    
+    ///#region função capitalize
+    String capitalize(String? text) {
+      if (text == null || text.isEmpty) return '';
+      return text[0].toUpperCase() + text.substring(1);
+    }
+   ///#endregion
 
     ///#region Construtores e Build Principal
     @override
@@ -143,7 +158,8 @@
           FutureBuilder<String>(
             future: _firebaseServicos.buscarNomeUsuario(),
             builder: (context, snapshot) => _buildText(
-                'Olá ${snapshot.data ?? 'Usuário'}', 20, Colors.white,
+                'Olá ${capitalize(snapshot.data ?? 'Usuário')}',
+                20, Colors.white,
                 isBold: true),
           ),
         ],
@@ -159,8 +175,14 @@
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildInfoColumn(
-                'Temperatura', '20°C', Icons.wb_sunny, Colors.yellow),
-            _buildInfoColumn('Umidade', '69%', null, null),
+              'Temperatura',
+              _climaAtual != null
+                ? '${_climaAtual!.temperatura.toStringAsFixed(1)}°C\n${capitalize(_climaAtual!.descricao)}'
+                : 'Carregando...',
+              Icons.wb_sunny,
+              Colors.yellow
+            )
+
           ],
         ),
       );
@@ -213,13 +235,6 @@
                 Text(
                   '$totalDispositivos ${totalDispositivos == 1 ? 'Dispositivo Ativo' : 'Dispositivos Ativos'}',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Switch(
-                  value: totalDispositivos > 0,
-                  onChanged: (value) {
-                    // TODO: Implementar lógica para ligar/desligar todos os dispositivos
-                  },
-                  activeColor: Colors.blue,
                 ),
               ],
             ),
@@ -427,7 +442,7 @@ Widget _buildBottomNavigationBar(BuildContext context) {
                   color: Colors.blue,
                 ),
                 child: const Icon(
-                  Icons.wifi, // sempre wifi agora
+                  Icons.wifi, 
                   color: Colors.white,
                   size: 30,
                 ),

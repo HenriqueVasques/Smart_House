@@ -1,8 +1,14 @@
+//#region Imports
 import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+//#endregion
 
 class WifiServicos {
-  final String baseUrl = "http://192.168.4.1"; // IP fixo do ESP32
+  //#region Configurações
+  final String baseUrl = "http://172.20.10.2"; // IP fixo do ESP32
+  final String chaveSecreta = "5fA9#zL3pW!c@Kq*4tE1vX8g^mN0dRb2";
 
   final List<String> caracteresValidos = [
     'A','B','C','D','E','F','G','H','I','J','K','L','M',
@@ -14,8 +20,9 @@ class WifiServicos {
   ];
 
   final int keyPosition = 12;
+  //#endregion
 
-  /// Gera um comando seguro codificado
+  //#region Funções de Segurança
   String gerarComandoSeguro(String caractereChave) {
     List<String> comando = List.generate(35, (index) {
       return caracteresValidos[(DateTime.now().microsecond + index) % caracteresValidos.length];
@@ -24,7 +31,23 @@ class WifiServicos {
     return comando.join();
   }
 
-  /// Testa conexão com o ESP32
+  String gerarNonce() {
+    final random = Random.secure();
+    return List<int>.generate(8, (_) => random.nextInt(256))
+        .map((e) => e.toRadixString(16).padLeft(2, '0'))
+        .join();
+  }
+
+String gerarAssinatura(String comando, String nonce) {
+  final key = utf8.encode(chaveSecreta); // chave secreta
+  final message = utf8.encode(comando + nonce); // comando + nonce
+  final hmacSha256 = Hmac(sha256, key); // novo objeto HMAC-SHA256
+  final digest = hmacSha256.convert(message);
+  return digest.toString();
+}
+  //#endregion
+
+  //#region Funções Principais
   Future<bool> testarConexao() async {
     try {
       final resposta = await http.get(Uri.parse(baseUrl));
@@ -34,41 +57,51 @@ class WifiServicos {
     }
   }
 
-  /// Envia comando codificado (ex: ligar ou desligar dispositivo)
-  Future<String?> enviarComando({
+  /// Envia comando seguro (ligar/desligar dispositivo)
+  Future<void> enviarComando({
     required String rotaCodificada,
     required String caractereChave,
   }) async {
     String comandoSeguro = gerarComandoSeguro(caractereChave);
+    String nonce = gerarNonce();
+    String assinatura = gerarAssinatura(comandoSeguro, nonce);
+    String pacoteUnico = comandoSeguro + nonce + assinatura;
 
     try {
-      final resposta = await http.post(
-        Uri.parse("$baseUrl/$rotaCodificada"),
-        body: {"msg": comandoSeguro},
+      final response = await http.post(
+        Uri.parse('$baseUrl/$rotaCodificada'),
+        body: {
+          "d1": pacoteUnico,
+        },
       );
 
-      if (resposta.statusCode == 200) {
-        final dados = json.decode(resposta.body);
-        return dados["status"]; // Retorna o token de sucesso (ex: W9#Z8@)
+      if (response.statusCode == 200) {
+        print('✅ Comando enviado com sucesso!');
+        print('Resposta do ESP: ${response.body}');
       } else {
-        print("Erro na resposta HTTP: ${resposta.statusCode}");
-        return null;
+        print('⚠️ Erro ao enviar comando: ${response.statusCode}, $pacoteUnico');
       }
     } catch (e) {
-      print("Erro ao enviar comando: $e");
-      return null;
+      print('❌ Erro de conexão: $e');
     }
   }
 
-  /// Envia valor simples (ex: valor de slider de intensidade)
+  /// Envia valor seguro (ex: intensidade do slider)
   Future<void> enviarValor({
     required String rotaCodificada,
     required int valor,
   }) async {
+    String valorTexto = valor.toString();
+    String nonce = gerarNonce();
+    String assinatura = gerarAssinatura(valorTexto, nonce);
+    String pacoteUnico = valorTexto + nonce + assinatura;
+
     try {
       final resposta = await http.post(
-        Uri.parse("$baseUrl/$rotaCodificada"),
-        body: {"msg": valor.toString()},
+        Uri.parse('$baseUrl/$rotaCodificada'),
+        body: {
+          "d1": pacoteUnico,
+        },
       );
 
       if (resposta.statusCode == 200) {
@@ -80,4 +113,5 @@ class WifiServicos {
       print('❌ Erro ao enviar valor: $e');
     }
   }
+  //#endregion
 }

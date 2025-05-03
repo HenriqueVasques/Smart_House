@@ -35,12 +35,18 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
     
 
   //#region Métodos de Atualização
-  void _atualizarTemperatura(double novaTemp) {
-    setState(() {
-      _temperatura = novaTemp;
-    });
-  }
+    Future<void> _atualizarTemperatura(double novaTemp) async {
+      if (novaTemp < 16 || novaTemp > 30) return; 
+      setState(() {
+        _temperatura = novaTemp;
+      });
 
+      // Enviar temperatura atual para o ESP32 (aciona o buzzer também)
+      await _wifiServicos.enviarValor(
+        rotaCodificada: 'vit22', 
+        valor: novaTemp.toInt(), 
+      );
+    }
     //#region Alternar Power com comando dinâmico
     Future<void> _alternarPower() async {
       setState(() {
@@ -48,14 +54,14 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
       });
 
       List<String> listaCaracteres = _isPowerOn
-          ? ['F', 'K', '9', '!', 'r', '+', 'k'] // Caracteres para LIGAR o ar
-          : ['p', '8', '%', '~', 's', '{', '4']; // Caracteres para DESLIGAR o ar
+          ? ['F', 'K', '9', '!', 'r', '+', 'k'] 
+          : ['p', '8', '%', '~', 's', '{', '4']; 
 
       // Escolhe um caractere aleatório da lista
       String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
       await _wifiServicos.enviarComando(
-        rotaCodificada: 'dr38', // Rota codificada do ar-condicionado no ESP32
+        rotaCodificada: 'dr38', 
         caractereChave: caractereSelecionado,
       );
     }

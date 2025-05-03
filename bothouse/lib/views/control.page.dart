@@ -1,6 +1,5 @@
 //#region Imports
 import 'package:bothouse/servicos/firebase_servicos.dart';
-import 'package:bothouse/servicos/controlador_dispositivos.dart';
 import 'package:flutter/material.dart';
 import 'package:bothouse/views/dispositivos/ar_condicionado_page.dart';
 import 'package:bothouse/views/dispositivos/fechadura.dart';
@@ -106,7 +105,7 @@ class _ControlPageState extends State<ControlPage> {
   //#region Device Card
 Widget _buildDeviceCard(BuildContext context, Dispositivo dispositivo) {
   return GestureDetector(
-    onTap: () => _handleDispositivo(dispositivo.nome), // AQUI AGORA
+    onTap: () => _handleDispositivo(dispositivo.nome),
     child: Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(

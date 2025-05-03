@@ -21,54 +21,34 @@ class _FechaduraPageState extends State<FechaduraPage> {
   //#region Variáveis de Estado
   final WifiServicos _wifiServicos = WifiServicos();
 
-  String _autoLock = '30s';
   bool _isLocked = true;
-  bool _silentMode = false;
-  double _volumeSlider = 2;
   //#endregion
 
   //#region Métodos de Atualização
   Future<void> _alternarFechadura() async {
-    setState(() {
-      _isLocked = !_isLocked;
-    });
+  setState(() {
+    _isLocked = !_isLocked;
+  });
 
-    List<String> listaCaracteres = _isLocked
-        ? ['Z', '#', '9', 'x', '\$', '%', '2'] // Trancar (fechar)
-        : ['G', 'M', '!', '0', '@', 'a', '&']; // Destrancar (abrir)
+  List<String> listaCaracteres = _isLocked
+      ? ['Z', '#', '9', 'x', '\$', '%', '2'] 
+      : ['G', 'M', '!', '0', '@', 'a', '&'];
 
-    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+  String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
-    await _wifiServicos.enviarComando(
-      rotaCodificada: 'by03', // Rota codificada da fechadura no ESP32
-      caractereChave: caractereSelecionado,
-    );
-  }
+  await _wifiServicos.enviarComando(
+    rotaCodificada: 'by03',
+    caractereChave: caractereSelecionado,
+  );
 
-  void _alternarModoSilencioso() {
-    setState(() {
-      _silentMode = !_silentMode;
-    });
-  }
+  // Define o ângulo do servo motor
+  int angulo = _isLocked ? 90 : 180;
 
-  void _atualizarAutoLock(String novoTimer) {
-    setState(() {
-      _autoLock = novoTimer;
-    });
-  }
-
-  void _atualizarVolume(double novoVolume) {
-    setState(() {
-      _volumeSlider = novoVolume;
-    });
-  }
-
-  String get _volumeTexto {
-    if (_volumeSlider == 0) return 'Mudo';
-    if (_volumeSlider <= 1) return 'Baixo';
-    if (_volumeSlider <= 2) return 'Médio';
-    return 'Alto';
-  }
+  await _wifiServicos.enviarValor(
+    rotaCodificada: 'rg38',
+    valor: angulo,
+  );
+}
   //#endregion
 
   //#region Build
@@ -90,8 +70,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildGridBotoes(),
-                  _buildSliderVolume(),
                   _buildBotaoFechadura(),
                   const SizedBox(height: 20),
                 ],
@@ -134,24 +112,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
     );
   }
 
-  Widget _buildGridBotoes() {
-    return Container(
-      height: 280,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                _buildBotaoSilencioso(),
-                _buildBotaoGrid('Auto Lock', _autoLock, ['Off', '30s', '1min', '5min'], _atualizarAutoLock),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBotaoGrid(String titulo, String valorAtual, List<String> opcoes, Function(String) onChanged) {
     return Expanded(
       child: Padding(
@@ -188,45 +148,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
     );
   }
 
-  Widget _buildBotaoSilencioso() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: _alternarModoSilencioso,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-              border: _silentMode ? Border.all(color: Colors.blue, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Modo Silencioso', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 2),
-                Icon(
-                  _silentMode ? Icons.volume_off : Icons.volume_up,
-                  color: _silentMode ? Colors.blue : Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _silentMode ? 'ON' : 'OFF',
-                  style: TextStyle(
-                    color: _silentMode ? Colors.blue : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildInfoText() {
     return Container(
@@ -239,37 +160,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
     );
   }
 
-  Widget _buildSliderVolume() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Volume do Beep: $_volumeTexto',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: const Color(0xFF4FDFFF),
-            inactiveTrackColor: Colors.grey[800],
-            thumbColor: Colors.white,
-            overlayColor: Colors.blue.withOpacity(0.3),
-            trackHeight: 4.0,
-          ),
-          child: Slider(
-            min: 0,
-            max: 3,
-            divisions: 3,
-            value: _volumeSlider,
-            onChanged: _atualizarVolume,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildBotaoFechadura() {
     return Container(

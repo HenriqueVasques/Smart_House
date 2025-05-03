@@ -32,13 +32,13 @@ class _LampadaPageState extends State<LampadaPage> {
     });
 
     List<String> listaCaracteres = _isPowerOn
-        ? ['T', 'K', '3', 'P', 'r', '+', 'H'] // Caracteres para LIGAR a lâmpada
-        : ['D', '8', '!', '~', 'Y', '{', '4']; // Caracteres para DESLIGAR a lâmpada
+        ? ['T', 'K', '3', 'P', 'r', '+', 'H'] 
+        : ['D', '8', '!', '~', 'Y', '{', '4'];
 
     String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
     await _wifiServicos.enviarComando(
-      rotaCodificada: 'tf52', // Rota codificada da lâmpada no ESP32
+      rotaCodificada: 'tf52',
       caractereChave: caractereSelecionado,
     );
   }
@@ -48,10 +48,10 @@ class _LampadaPageState extends State<LampadaPage> {
     _intensidade = novaIntensidade.clamp(0, 100);
   });
 
-  int valorPWM = (_intensidade / 100 * 255).toInt(); // Converter para 0-255
+  int valorPWM = (_intensidade / 100 * 255).toInt(); 
 
   await _wifiServicos.enviarValor(
-    rotaCodificada: 'tf52', // rota codificada da lâmpada
+    rotaCodificada: 'tf52',
     valor: valorPWM, 
   );
 }
@@ -69,8 +69,6 @@ class _LampadaPageState extends State<LampadaPage> {
           children: [
             const SizedBox(height: 50),
             _buildIconePrincipal(),
-            const SizedBox(height: 60),
-            _buildInfoText(),
             const SizedBox(height: 0),
             Expanded(
               child: Column(
@@ -118,17 +116,6 @@ class _LampadaPageState extends State<LampadaPage> {
       Icons.lightbulb_outline,
       size: 60,
       color: Colors.white,
-    );
-  }
-
-  Widget _buildInfoText() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
     );
   }
 
