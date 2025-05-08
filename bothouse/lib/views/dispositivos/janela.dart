@@ -1,6 +1,7 @@
 //#region Imports
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Adicionado import do SharedPreferences
 //#endregion
 
 class JanelaPage extends StatefulWidget {
@@ -24,6 +25,60 @@ class _JanelaPageState extends State<JanelaPage> {
   String _abertura = '50%';
   bool _isClosed = true;
   double _aberturaSlider = 50;
+  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
+  late String _closedKey; // Chave para salvar o estado fechado/aberto
+  late String _aberturaKey; // Chave para salvar o valor da abertura
+  //#endregion
+
+  //#region Ciclo de Vida
+  @override
+  void initState() {
+    super.initState();
+    _closedKey = 'closed_${widget.comodoId}_${widget.dispositivoNome}';
+    _aberturaKey = 'abertura_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado();
+  }
+
+  Future<void> _carregarEstado() async {
+    _prefs = await SharedPreferences.getInstance();
+    
+    // Primeiro carregamos o valor da abertura
+    final aberturaValor = _prefs.getDouble(_aberturaKey);
+    
+    if (aberturaValor != null) {
+      setState(() {
+        _aberturaSlider = aberturaValor.clamp(0, 100);
+        _abertura = '${_aberturaSlider.toInt()}%';
+      });
+    }
+    
+    // Depois carregamos o estado fechado/aberto
+    // Se não houver valor salvo, usamos o valor baseado na abertura
+    final fechadoSalvo = _prefs.getBool(_closedKey);
+    if (fechadoSalvo != null) {
+      setState(() {
+        _isClosed = fechadoSalvo;
+        
+        // Garantimos consistência entre _isClosed e _aberturaSlider
+        if (_isClosed && _aberturaSlider > 0) {
+          _aberturaSlider = 0;
+          _abertura = '0%';
+          // Salvamos a consistência
+          _salvarAbertura(0);
+        } else if (!_isClosed && _aberturaSlider == 0) {
+          _aberturaSlider = 100;
+          _abertura = '100%';
+          // Salvamos a consistência
+          _salvarAbertura(100);
+        }
+      });
+    } else {
+      // Se não temos valor salvo para _isClosed, derivamos do valor de abertura
+      setState(() {
+        _isClosed = _aberturaSlider == 0;
+      });
+    }
+  }
   //#endregion
 
   //#region Métodos de Atualização
@@ -39,6 +94,10 @@ class _JanelaPageState extends State<JanelaPage> {
       }
     });
 
+    // Salva os estados localmente
+    await _prefs.setBool(_closedKey, _isClosed);
+    await _salvarAbertura(_aberturaSlider);
+
     List<String> listaCaracteres = _isClosed
         ? ['Q', 'E', 'L', '1', '(', '=', ']'] 
         : ['U', 'V', 'W', '*', 'b', 'N', '^']; 
@@ -51,12 +110,27 @@ class _JanelaPageState extends State<JanelaPage> {
     );
   }
 
-  void _atualizarAbertura(double novoValor) {
+  Future<void> _salvarAbertura(double valor) async {
+    await _prefs.setDouble(_aberturaKey, valor);
+  }
+
+  void _atualizarAbertura(double novoValor) async {
     setState(() {
       _aberturaSlider = novoValor;
       _abertura = '${novoValor.toInt()}%';
       _isClosed = novoValor == 0;
     });
+    
+    // Salva os estados localmente
+    await _salvarAbertura(novoValor);
+    await _prefs.setBool(_closedKey, _isClosed);
+    
+    // Aqui você pode adicionar o código para enviar o valor para o ESP32
+    // Exemplo:
+    // await _wifiServicos.enviarValor(
+    //   rotaCodificada: 'gh77',
+    //   valor: novoValor.toInt(),
+    // );
   }
   //#endregion
 

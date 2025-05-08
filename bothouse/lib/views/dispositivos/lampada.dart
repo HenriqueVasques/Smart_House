@@ -1,11 +1,13 @@
 //#region Imports
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //#endregion
 
 class LampadaPage extends StatefulWidget {
   final String comodoId;
   final String dispositivoNome;
+
 
   const LampadaPage({
     Key? key,
@@ -20,9 +22,29 @@ class LampadaPage extends StatefulWidget {
 class _LampadaPageState extends State<LampadaPage> {
   //#region Variáveis de Estado
   final WifiServicos _wifiServicos = WifiServicos();
-
   double _intensidade = 70;
   bool _isPowerOn = false;
+  late SharedPreferences _prefs;
+  late String _powerKey; 
+  //#endregion
+
+  //#region Ciclo de Vida
+  @override
+  void initState() {
+    super.initState();
+    _powerKey = 'power_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado();
+    _carregarIntensidade();
+  }
+
+
+
+  Future<void> _carregarEstado() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isPowerOn = _prefs.getBool(_powerKey) ?? false;
+    });
+  }
   //#endregion
 
   //#region Métodos de Atualização
@@ -31,8 +53,11 @@ class _LampadaPageState extends State<LampadaPage> {
       _isPowerOn = !_isPowerOn;
     });
 
+    // Salva o estado localmente
+    await _prefs.setBool(_powerKey, _isPowerOn);
+
     List<String> listaCaracteres = _isPowerOn
-        ? ['T', 'K', '3', 'P', 'r', '+', 'H'] 
+        ? ['T', 'K', '3', 'P', 'r', '+', 'H']
         : ['D', '8', '!', '~', 'Y', '{', '4'];
 
     String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
@@ -44,16 +69,36 @@ class _LampadaPageState extends State<LampadaPage> {
   }
 
  void _atualizarIntensidade(double novaIntensidade) async {
+  final double valorCorrigido = novaIntensidade.clamp(0, 100);
   setState(() {
-    _intensidade = novaIntensidade.clamp(0, 100);
+    _intensidade = valorCorrigido;
   });
 
-  int valorPWM = (_intensidade / 100 * 255).toInt(); 
+  await _salvarIntensidade(valorCorrigido);
+
+  int valorPWM = (valorCorrigido / 100 * 255).toInt();
 
   await _wifiServicos.enviarValor(
     rotaCodificada: 'tf52',
-    valor: valorPWM, 
+    valor: valorPWM,
   );
+}
+
+Future<void> _salvarIntensidade(double valor) async {
+  final prefs = await SharedPreferences.getInstance();
+  final chave = 'intensidade_${widget.comodoId}_${widget.dispositivoNome}';
+  await prefs.setDouble(chave, valor);
+}
+
+Future<void> _carregarIntensidade() async {
+  final prefs = await SharedPreferences.getInstance();
+  final chave = 'intensidade_${widget.comodoId}_${widget.dispositivoNome}';
+  final valorSalvo = prefs.getDouble(chave);
+  if (valorSalvo != null) {
+    setState(() {
+      _intensidade = valorSalvo.clamp(0, 100);
+    });
+  }
 }
   //#endregion
 

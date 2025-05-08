@@ -1,6 +1,6 @@
-//ventilador.dart
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Adicionado import do SharedPreferences
 
 class VentiladorPage extends StatefulWidget {
   final String comodoId;
@@ -21,41 +21,89 @@ class _VentiladorPageState extends State<VentiladorPage> {
   final WifiServicos _wifiServicos = WifiServicos(); 
   double _velocidadeSlider = 1; // 1-3 representando Baixa, Média, Alta
   bool _isPowerOn = false;
+  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
+  late String _powerKey; // Chave para salvar o estado liga/desliga
+  late String _velocidadeKey; // Chave para salvar o valor da velocidade
+  //#endregion
+
+  //#region Ciclo de Vida
+  @override
+  void initState() {
+    super.initState();
+    _powerKey = 'power_${widget.comodoId}_${widget.dispositivoNome}';
+    _velocidadeKey = 'velocidade_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado();
+  }
+
+  Future<void> _carregarEstado() async {
+    _prefs = await SharedPreferences.getInstance();
+    
+    // Carregamos o valor da velocidade
+    final velocidadeValor = _prefs.getDouble(_velocidadeKey);
+    if (velocidadeValor != null) {
+      setState(() {
+        _velocidadeSlider = velocidadeValor.clamp(1, 3); // Velocidade varia de 1 a 3
+      });
+    }
+    
+    // Carregamos o estado liga/desliga
+    setState(() {
+      _isPowerOn = _prefs.getBool(_powerKey) ?? false;
+    });
+  }
   //#endregion
 
   //#region Métodos de Atualização
-  void _atualizarVelocidade(double novaVelocidade) async {
-  setState(() {
-    _velocidadeSlider = novaVelocidade;
-  });
+  Future<void> _atualizarVelocidade(double novaVelocidade) async {
+    setState(() {
+      _velocidadeSlider = novaVelocidade;
+    });
+    
+    // Salva a velocidade localmente
+    await _salvarVelocidade(novaVelocidade);
 
-  int valorVelocidade = novaVelocidade.toInt(); // 1, 2 ou 3
+    int valorVelocidade = novaVelocidade.toInt(); // 1, 2 ou 3
 
-  await _wifiServicos.enviarValor(
-    rotaCodificada: 'hv21', // rota do ventilador
-    valor: valorVelocidade,
-  );
-}
+    await _wifiServicos.enviarValor(
+      rotaCodificada: 'hv21', // rota do ventilador
+      valor: valorVelocidade,
+    );
+  }
+
+  Future<void> _salvarVelocidade(double valor) async {
+    await _prefs.setDouble(_velocidadeKey, valor);
+  }
 
   //#region Alternar Power com comando dinâmico
-    Future<void> _alternarPower() async {
-      setState(() {
-        _isPowerOn = !_isPowerOn;
-      });
+  Future<void> _alternarPower() async {
+    setState(() {
+      _isPowerOn = !_isPowerOn;
+    });
+    
+    // Salva o estado localmente
+    await _prefs.setBool(_powerKey, _isPowerOn);
 
-      List<String> listaCaracteres = _isPowerOn
-          ? ['h', 'o', '9', '#', 'r', '6', 'F'] // Caracteres para LIGAR o ventilador
-          : ['G', ',', '%', '~','T', 'j', '5']; // Caracteres para DESLIGAR o ventilador
+    List<String> listaCaracteres = _isPowerOn
+        ? ['h', 'o', '9', '#', 'r', '6', 'F'] // Caracteres para LIGAR o ventilador
+        : ['G', ',', '%', '~','T', 'j', '5']; // Caracteres para DESLIGAR o ventilador
 
-      // Escolhe um caractere aleatório da lista
-      String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+    // Escolhe um caractere aleatório da lista
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
-      await _wifiServicos.enviarComando(
-        rotaCodificada: 'hv21', // Rota codificada do ar-condicionado no ESP32
-        caractereChave: caractereSelecionado,
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'hv21', // Rota codificada do ventilador no ESP32
+      caractereChave: caractereSelecionado,
+    );
+    
+    // Se o ventilador for ligado, enviamos a velocidade atual
+    if (_isPowerOn) {
+      await _wifiServicos.enviarValor(
+        rotaCodificada: 'hv21',
+        valor: _velocidadeSlider.toInt(),
       );
     }
-    //#endregion
+  }
+  //#endregion
 
   String get _velocidadeTexto {
     if (_velocidadeSlider <= 1.5) return 'Baixa';
@@ -74,9 +122,9 @@ class _VentiladorPageState extends State<VentiladorPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            const SizedBox(height: 60),
-            _buildInfoText(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 50),
+            _buildIconePrincipal(),
+            const SizedBox(height: 0),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -117,6 +165,14 @@ class _VentiladorPageState extends State<VentiladorPage> {
     );
   }
 
+  Widget _buildIconePrincipal() {
+    return const Icon(
+      Icons.air,
+      size: 60,
+      color: Colors.white,
+    );
+  }
+
   Widget _buildBotaoGrid(String titulo, String valorAtual, List<String> opcoes, Function(String) onChanged) {
     return Expanded(
       child: Padding(
@@ -153,16 +209,6 @@ class _VentiladorPageState extends State<VentiladorPage> {
     );
   }
 
-  Widget _buildInfoText() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-    );
-  }
 
   Widget _buildSliderVelocidade() {
     return Column(

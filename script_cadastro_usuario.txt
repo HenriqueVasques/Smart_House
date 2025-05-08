@@ -1,69 +1,140 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // Importa a biblioteca do Firestore para interagir com o banco de dados
-import 'package:firebase_auth/firebase_auth.dart'; // Importa a biblioteca de autenticação do Firebase
-import 'package:firebase_core/firebase_core.dart'; // Importa a biblioteca principal do Firebase para inicialização
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-Future<void> main() async {
-  // Inicializar Firebase
-  await Firebase.initializeApp(); // Inicializa o Firebase para poder utilizar seus serviços
+//#region Função de cadastro de usuário
+Future<String> cadastrarUsuario(String nome, String email, String senha) async {
+  try {
+    UserCredential userCredential = await FirebaseAuth.instance
+        .createUserWithEmailAndPassword(email: email, password: senha);
 
-  // Função para cadastrar um novo usuário
-  Future<String> cadastrarUsuario(String nome, String email, String senha) async {
-    try {
-      // Cadastrar usuário no Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email, // Email do usuário
-        password: senha, // Senha do usuário
-      );
+    String userId = userCredential.user!.uid;
 
-      String userId = userCredential.user!.uid; // Obtém o ID único do usuário criado
+    await FirebaseFirestore.instance.collection('users').doc(userId).set({
+      'nome': nome,
+      'email': email,
+    });
 
-      // Adicionar detalhes do usuário no Firestore
-      await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'nome': nome, // Nome do usuário
-        'email': email, // Email do usuário
-      });
-
-      print("Usuário $nome cadastrado com sucesso!");
-      return userId; // Retorna o ID do usuário para ser usado na função de adicionar cômodos
-    } catch (e) {
-      print("Erro ao cadastrar usuário: $e");
-      return ''; // Retorna uma string vazia em caso de erro
-    }
+    print("Usuário $nome cadastrado com sucesso!");
+    return userId;
+  } catch (e) {
+    print("Erro ao cadastrar usuário: $e");
+    return '';
   }
-
-  // Função para adicionar um cômodo e dispositivos para um usuário
-  Future<void> adicionarComodo(String userId, String nomeComodo, List<String> dispositivos) async {
-    try {
-      // Adicionar cômodo na sub-coleção 'comodos' do usuário
-      await FirebaseFirestore.instance.collection('users').doc(userId).collection('comodos').add({
-        'nome': nomeComodo, // Nome do cômodo
-        'dispositivos': dispositivos, // Lista de dispositivos no cômodo
-      });
-
-      print("Cômodo $nomeComodo adicionado com sucesso!");
-    } catch (e) {
-      print("Erro ao adicionar cômodo: $e");
-    }
-  }
-
-  // Exemplo de uso - Listas de dispositivos para diferentes cômodos
-  List<String> dispositivosSala = ['Lâmpada', 'TV'];
-  List<String> dispositivosCozinha = ['Geladeira', 'Microondas'];
-  List<String> dispositivosQuarto = ['Lâmpada', 'Ar-condicionado'];
-  List<String> dispositivosBanheiro = ['Chuveiro', 'Torneira'];
-
-  // Cadastrar e configurar usuários
-  String userId1 = await cadastrarUsuario('Usuário 1', 'usuario1@example.com', 'senha_segura');
-  if (userId1.isNotEmpty) {
-    await adicionarComodo(userId1, 'Sala', dispositivosSala);
-    await adicionarComodo(userId1, 'Cozinha', dispositivosCozinha);
-  }
-
-  String userId2 = await cadastrarUsuario('Usuário 2', 'usuario2@example.com', 'senha_segura');
-  if (userId2.isNotEmpty) {
-    await adicionarComodo(userId2, 'Quarto', dispositivosQuarto);
-    await adicionarComodo(userId2, 'Banheiro', dispositivosBanheiro);
-  }
-
-  print('Todos os usuários foram cadastrados e configurados com sucesso!');
 }
+//#endregion
+
+//#region Função dinâmica para adicionar cômodo com estados
+Future<void> adicionarComodoComEstadoDinamico(String userId, String nomeComodo, List<String> dispositivos) async {
+  try {
+    DocumentReference comodoRef = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('comodos')
+        .add({
+      'nome': nomeComodo,
+      'dispositivos': dispositivos,
+    });
+
+    String comodoId = comodoRef.id;
+
+    Map<String, dynamic> estados = {};
+
+    for (String dispositivo in dispositivos) {
+      String nome = dispositivo.toLowerCase();
+
+      if (nome.contains('lâmpada')) {
+        estados['lampada_ligada'] = false;
+      } else if (nome.contains('ar')) {
+        estados['ar_condicionado_ligado'] = false;
+        estados['ar_condicionado_temperatura'] = 23;
+      } else if (nome.contains('fechadura')) {
+        estados['fechadura_aberta'] = false;
+      } else if (nome.contains('janela')) {
+        estados['janela_aberta'] = false;
+      } else if (nome.contains('ventilador')) {
+        estados['ventilador_ligado'] = false;
+        estados['ventilador_velocidade'] = 1;
+      }
+    }
+
+    await comodoRef.collection('estados_dispositivos').doc(comodoId).set(estados);
+
+    print("Cômodo $nomeComodo com estados criado para o usuário $userId.");
+  } catch (e) {
+    print("Erro ao adicionar cômodo com estados: $e");
+  }
+}
+//#endregion
+
+//#region Função principal para executar o script completo
+Future<void> rodarCadastroCompleto() async {
+  // Exemplo 1: dois cômodos com dispositivos fictícios
+  String userId1 = await cadastrarUsuario('Usuário 1', 'usuario1@example.com', 'senha123');
+  if (userId1.isNotEmpty) {
+    await adicionarComodoComEstadoDinamico(userId1, 'Sala', ['Lâmpada Inteligente', 'TV']);
+    await adicionarComodoComEstadoDinamico(userId1, 'Cozinha', ['Geladeira Moderna', 'Microondas']);
+  }
+
+  // Exemplo 2: outro usuário com cômodos diferentes
+  String userId2 = await cadastrarUsuario('Maria Controle', 'maria.ctrl@example.com', 'senha456');
+  if (userId2.isNotEmpty) {
+    await adicionarComodoComEstadoDinamico(userId2, 'Sala de Estar', ['Janela Inteligente', 'Fechadura', 'Ventilador Turbo']);
+  }
+}
+//#endregion
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+PAG PARA RODAR ISSO
+
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'setup_script.dart'; // arquivo acima
+
+class SetupPage extends StatefulWidget {
+  const SetupPage({Key? key}) : super(key: key);
+
+  @override
+  State<SetupPage> createState() => _SetupPageState();
+}
+
+class _SetupPageState extends State<SetupPage> {
+  @override
+  void initState() {
+    super.initState();
+    _executarScript();
+  }
+
+  Future<void> _executarScript() async {
+    await Firebase.initializeApp();
+    await rodarCadastroCompleto();
+    print('✔️ Script de configuração executado com sucesso!');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Text(
+          'Executando setup inicial...',
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
+      ),
+    );
+  }
+}
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+✅ Como usar
+Adicione o setup_script.dart e setup_page.dart no seu projeto Flutter.
+
+Chame SetupPage() na inicialização (por exemplo, no main.dart) temporariamente.
+
+Rode o app — ele vai cadastrar os usuários, cômodos e estados automaticamente.
+
+Depois, remova a SetupPage do app e o banco já estará pronto!

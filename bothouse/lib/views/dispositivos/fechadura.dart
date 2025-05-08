@@ -1,6 +1,7 @@
 //#region Imports
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Adicionado import do SharedPreferences
 //#endregion
 
 class FechaduraPage extends StatefulWidget {
@@ -22,33 +23,55 @@ class _FechaduraPageState extends State<FechaduraPage> {
   final WifiServicos _wifiServicos = WifiServicos();
 
   bool _isLocked = true;
+  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
+  late String _lockKey; // Chave para salvar o estado da fechadura
+  //#endregion
+
+  //#region Ciclo de Vida
+  @override
+  void initState() {
+    super.initState();
+    _lockKey = 'lock_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado();
+  }
+
+  Future<void> _carregarEstado() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLocked = _prefs.getBool(_lockKey) ?? true; // Por padrão a fechadura está trancada
+    });
+  }
   //#endregion
 
   //#region Métodos de Atualização
   Future<void> _alternarFechadura() async {
-  setState(() {
-    _isLocked = !_isLocked;
-  });
+    setState(() {
+      _isLocked = !_isLocked;
+    });
 
-  List<String> listaCaracteres = _isLocked
-      ? ['Z', '#', '9', 'x', '\$', '%', '2'] 
-      : ['G', 'M', '!', '0', '@', 'a', '&'];
+    // Salva o estado localmente
+    await _prefs.setBool(_lockKey, _isLocked);
 
-  String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+    List<String> listaCaracteres = _isLocked
+        ? ['Z', '#', '9', 'x', '\$', '%', '2'] 
+        : ['G', 'M', '!', '0', '@', 'a', '&'];
 
-  await _wifiServicos.enviarComando(
-    rotaCodificada: 'by03',
-    caractereChave: caractereSelecionado,
-  );
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
-  // Define o ângulo do servo motor
-  int angulo = _isLocked ? 90 : 180;
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'by03',
+      caractereChave: caractereSelecionado,
+    );
 
-  await _wifiServicos.enviarValor(
-    rotaCodificada: 'rg38',
-    valor: angulo,
-  );
-}
+    // Define o ângulo do servo motor
+    int angulo = _isLocked ? 90 : 180;
+
+    await _wifiServicos.enviarValor(
+      rotaCodificada: 'rg38',
+      valor: angulo,
+    );
+  }
+  //#endregion
   //#endregion
 
   //#region Build

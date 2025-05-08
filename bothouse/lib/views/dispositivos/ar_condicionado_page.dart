@@ -1,8 +1,9 @@
 // ar_condicionado.dart
+// ar_condicionado.dart
 //#region Imports
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //#endregion
 
 //#region ArCondicionadoPage
@@ -31,59 +32,100 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
   String _timer = 'Off';
   double _temperatura = 23;
   bool _isPowerOn = false;
+  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
+  late String _powerKey; // Chave para salvar o estado de power
+  late String _temperaturaKey; // Chave para salvar a temperatura
   //#endregion
-    
+  
+  //#region Ciclo de Vida
+  @override
+  void initState() {
+    super.initState();
+    _powerKey = 'power_${widget.comodoId}_${widget.dispositivoNome}';
+    _temperaturaKey = 'temperatura_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado();
+    _carregarTemperatura();
+  }
+
+  Future<void> _carregarEstado() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isPowerOn = _prefs.getBool(_powerKey) ?? false;
+    });
+  }
+
+  Future<void> _carregarTemperatura() async {
+    final prefs = await SharedPreferences.getInstance();
+    final valorSalvo = prefs.getDouble(_temperaturaKey);
+    if (valorSalvo != null) {
+      setState(() {
+        _temperatura = valorSalvo.clamp(16.0, 30.0);
+      });
+    }
+  }
+  //#endregion
 
   //#region Métodos de Atualização
-    Future<void> _atualizarTemperatura(double novaTemp) async {
-      if (novaTemp < 16 || novaTemp > 30) return; 
-      setState(() {
-        _temperatura = novaTemp;
-      });
+  Future<void> _atualizarTemperatura(double novaTemp) async {
+    if (novaTemp < 16 || novaTemp > 30) return; 
+    setState(() {
+      _temperatura = novaTemp;
+    });
 
-      // Enviar temperatura atual para o ESP32 (aciona o buzzer também)
-      await _wifiServicos.enviarValor(
-        rotaCodificada: 'vit22', 
-        valor: novaTemp.toInt(), 
-      );
-    }
-    //#region Alternar Power com comando dinâmico
-    Future<void> _alternarPower() async {
-      setState(() {
-        _isPowerOn = !_isPowerOn;
-      });
+    await _salvarTemperatura(novaTemp);
 
-      List<String> listaCaracteres = _isPowerOn
-          ? ['F', 'K', '9', '!', 'r', '+', 'k'] 
-          : ['p', '8', '%', '~', 's', '{', '4']; 
+    // Enviar temperatura atual para o ESP32 (aciona o buzzer também)
+    await _wifiServicos.enviarValor(
+      rotaCodificada: 'vit22', 
+      valor: novaTemp.toInt(), 
+    );
+  }
 
-      // Escolhe um caractere aleatório da lista
-      String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+  Future<void> _salvarTemperatura(double valor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_temperaturaKey, valor);
+  }
 
-      await _wifiServicos.enviarComando(
-        rotaCodificada: 'dr38', 
-        caractereChave: caractereSelecionado,
-      );
-    }
-    //#endregion
-    
-    void _atualizarModo(String modo) {
-      setState(() {
-        _modoSelecionado = modo;
-      });
-    }
+  //#region Alternar Power com comando dinâmico
+  Future<void> _alternarPower() async {
+    setState(() {
+      _isPowerOn = !_isPowerOn;
+    });
 
-    void _atualizarVelocidade(String velocidade) {
-      setState(() {
-        _velocidade = velocidade;
-      });
-    }
+    // Salva o estado localmente
+    await _prefs.setBool(_powerKey, _isPowerOn);
 
-    void _atualizarTimer(String timer) {
-      setState(() {
-        _timer = timer;
-      });
-    }
+    List<String> listaCaracteres = _isPowerOn
+        ? ['F', 'K', '9', '!', 'r', '+', 'k'] 
+        : ['p', '8', '%', '~', 's', '{', '4']; 
+
+    // Escolhe um caractere aleatório da lista
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'dr38', 
+      caractereChave: caractereSelecionado,
+    );
+  }
+  //#endregion
+  
+  void _atualizarModo(String modo) {
+    setState(() {
+      _modoSelecionado = modo;
+    });
+  }
+
+  void _atualizarVelocidade(String velocidade) {
+    setState(() {
+      _velocidade = velocidade;
+    });
+  }
+
+  void _atualizarTimer(String timer) {
+    setState(() {
+      _timer = timer;
+    });
+  }
     //#endregion
 
     //#region Método Principal de Build
@@ -390,4 +432,3 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
     }
     //#endregion
   }
-  
