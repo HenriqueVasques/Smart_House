@@ -1,7 +1,10 @@
 //#region Imports
+import 'package:bothouse/servicos/firebase_servicos.dart';
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Adicionado import do SharedPreferences
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:bothouse/servicos/sensor_umidade_controller.dart';
 //#endregion
 
 class JanelaPage extends StatefulWidget {
@@ -21,13 +24,15 @@ class JanelaPage extends StatefulWidget {
 class _JanelaPageState extends State<JanelaPage> {
   //#region Variáveis de Estado
   final WifiServicos _wifiServicos = WifiServicos();
+  final SensorUmidadeController _sensorController = SensorUmidadeController();
 
   String _abertura = '50%';
   bool _isClosed = true;
   double _aberturaSlider = 50;
-  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
-  late String _closedKey; // Chave para salvar o estado fechado/aberto
-  late String _aberturaKey; // Chave para salvar o valor da abertura
+  late SharedPreferences _prefs;
+  late String _closedKey;
+  late String _aberturaKey;
+  late String _ignorarSensorKey;
   //#endregion
 
   //#region Ciclo de Vida
@@ -36,78 +41,63 @@ class _JanelaPageState extends State<JanelaPage> {
     super.initState();
     _closedKey = 'closed_${widget.comodoId}_${widget.dispositivoNome}';
     _aberturaKey = 'abertura_${widget.comodoId}_${widget.dispositivoNome}';
-    _carregarEstado();
+    _ignorarSensorKey = 'ignorarSensor_${widget.comodoId}_${widget.dispositivoNome}';
+    _carregarEstado().then((_) {
+      _sensorController.escutarSensorUmidade(
+        comodoId: widget.comodoId,
+        onSensorMolhado: () {
+          if (!_isClosed) {
+            _alternarJanela();
+          }
+        },
+      );
+    });
   }
+  //#endregion
 
+  //#region Firestore Helper
+  DocumentReference<Map<String, dynamic>> get _comodoRef {
+    final user = FirebaseServicos().currentUser;
+    if (user == null) {
+      throw Exception("Usuário não logado");
+    }
+    return FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .collection('comodos')
+        .doc(widget.comodoId);
+  }
+  //#endregion
+
+  //#region Estado da Janela
   Future<void> _carregarEstado() async {
     _prefs = await SharedPreferences.getInstance();
-    
-    // Primeiro carregamos o valor da abertura
     final aberturaValor = _prefs.getDouble(_aberturaKey);
-    
     if (aberturaValor != null) {
       setState(() {
         _aberturaSlider = aberturaValor.clamp(0, 100);
         _abertura = '${_aberturaSlider.toInt()}%';
       });
     }
-    
-    // Depois carregamos o estado fechado/aberto
-    // Se não houver valor salvo, usamos o valor baseado na abertura
     final fechadoSalvo = _prefs.getBool(_closedKey);
     if (fechadoSalvo != null) {
       setState(() {
         _isClosed = fechadoSalvo;
-        
-        // Garantimos consistência entre _isClosed e _aberturaSlider
         if (_isClosed && _aberturaSlider > 0) {
           _aberturaSlider = 0;
           _abertura = '0%';
-          // Salvamos a consistência
           _salvarAbertura(0);
         } else if (!_isClosed && _aberturaSlider == 0) {
           _aberturaSlider = 100;
           _abertura = '100%';
-          // Salvamos a consistência
           _salvarAbertura(100);
         }
       });
     } else {
-      // Se não temos valor salvo para _isClosed, derivamos do valor de abertura
       setState(() {
         _isClosed = _aberturaSlider == 0;
       });
     }
-  }
-  //#endregion
-
-  //#region Métodos de Atualização
-  Future<void> _alternarJanela() async {
-    setState(() {
-      _isClosed = !_isClosed;
-      if (_isClosed) {
-        _aberturaSlider = 0;
-        _abertura = '0%';
-      } else {
-        _aberturaSlider = 100;
-        _abertura = '100%';
-      }
-    });
-
-    // Salva os estados localmente
-    await _prefs.setBool(_closedKey, _isClosed);
-    await _salvarAbertura(_aberturaSlider);
-
-    List<String> listaCaracteres = _isClosed
-        ? ['Q', 'E', 'L', '1', '(', '=', ']'] 
-        : ['U', 'V', 'W', '*', 'b', 'N', '^']; 
-
-    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
-
-    await _wifiServicos.enviarComando(
-      rotaCodificada: 'gh77',
-      caractereChave: caractereSelecionado,
-    );
   }
 
   Future<void> _salvarAbertura(double valor) async {
@@ -120,21 +110,76 @@ class _JanelaPageState extends State<JanelaPage> {
       _abertura = '${novoValor.toInt()}%';
       _isClosed = novoValor == 0;
     });
-    
-    // Salva os estados localmente
     await _salvarAbertura(novoValor);
     await _prefs.setBool(_closedKey, _isClosed);
-    
-    // Aqui você pode adicionar o código para enviar o valor para o ESP32
-    // Exemplo:
-    // await _wifiServicos.enviarValor(
-    //   rotaCodificada: 'gh77',
-    //   valor: novoValor.toInt(),
-    // );
   }
   //#endregion
 
-  //#region Método Principal de Build
+  //#region Abertura Manual com Verificação
+  void _verificarSensorAntesDeAbrir() async {
+    final molhado = await _sensorController.consultarSensorNoFirebase(widget.comodoId);
+    final agora = DateTime.now().millisecondsSinceEpoch;
+    final ignorarAte = _prefs.getInt(_ignorarSensorKey) ?? 0;
+    final estaIgnorando = agora < ignorarAte;
+
+    if (!molhado || estaIgnorando) {
+      _alternarJanela();
+      return;
+    }
+
+    final desejaAbrir = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Possível chuva detectada'),
+        content: const Text('O sensor detectou umidade. Deseja abrir a janela mesmo assim?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sim'),
+          ),
+        ],
+      ),
+    );
+
+    if (desejaAbrir == true) {
+      final ignorarAte = DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch;
+      await _prefs.setInt(_ignorarSensorKey, ignorarAte);
+      _alternarJanela();
+      Future.delayed(const Duration(minutes: 10), () async {
+        await _sensorController.verificarSensorUmidadeESP32();
+      });
+    }
+  }
+  //#endregion
+
+  //#region Abertura e Fechamento
+  Future<void> _alternarJanela() async {
+    setState(() {
+      _isClosed = !_isClosed;
+      _aberturaSlider = _isClosed ? 0 : 100;
+      _abertura = '${_aberturaSlider.toInt()}%';
+    });
+    await _prefs.setBool(_closedKey, _isClosed);
+    await _salvarAbertura(_aberturaSlider);
+
+    List<String> listaCaracteres = _isClosed
+        ? ['Q', 'E', 'L', '1', '(', '=', ']']
+        : ['U', 'V', 'W', '*', 'b', 'N', '^'];
+
+    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+    await _wifiServicos.enviarComando(
+      rotaCodificada: 'gh77',
+      caractereChave: caractereSelecionado,
+    );
+  }
+  //#endregion
+
+  //#region Interface (UI)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,9 +207,7 @@ class _JanelaPageState extends State<JanelaPage> {
       ),
     );
   }
-  //#endregion
 
-  //#region Componentes da Interface
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 39, 32, 32),
@@ -177,10 +220,7 @@ class _JanelaPageState extends State<JanelaPage> {
         children: [
           Icon(Icons.window, color: Colors.white),
           SizedBox(width: 10),
-          Text(
-            'Janela Inteligente',
-            style: TextStyle(color: Colors.white),
-          ),
+          Text('Janela Inteligente', style: TextStyle(color: Colors.white)),
         ],
       ),
       centerTitle: true,
@@ -201,10 +241,7 @@ class _JanelaPageState extends State<JanelaPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Nível de Abertura: $_abertura',
-              style: const TextStyle(color: Colors.white),
-            ),
+            Text('Nível de Abertura: $_abertura', style: const TextStyle(color: Colors.white)),
           ],
         ),
         SliderTheme(
