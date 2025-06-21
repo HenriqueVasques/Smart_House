@@ -8,7 +8,7 @@ import 'dart:math';
 //#region Controlador de Dispositivos
 class ControladorDispositivos {
   //#region Configurações
-  final String baseUrl = 'http://192.168.4.1'; // IP fixo do ESP32
+  final String baseUrl = 'http://192.168.0.16'; // IP fixo do ESP32
   final int payloadLength = 35; // Tamanho total da mensagem
   final int keyPosition = 12; // Posição fixa do caractere-chave
   final Random random = Random();
