@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class WifiServicos {
   //#region Configurações
-  final String baseUrl = "http://192.168.93.84"; // IP fixo do ESP32
+  final String baseUrl = "http://192.168.0.16"; // IP fixo do ESP32
   final String chaveSecreta = "5fA9#zL3pW!c@Kq*4tE1vX8g^mN0dRb2";
 
   final List<String> caracteresValidos = [

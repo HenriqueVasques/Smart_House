@@ -36,23 +36,31 @@ class _JanelaPageState extends State<JanelaPage> {
   //#endregion
 
   //#region Ciclo de Vida
-  @override
-  void initState() {
-    super.initState();
-    _closedKey = 'closed_${widget.comodoId}_${widget.dispositivoNome}';
-    _aberturaKey = 'abertura_${widget.comodoId}_${widget.dispositivoNome}';
-    _ignorarSensorKey = 'ignorarSensor_${widget.comodoId}_${widget.dispositivoNome}';
-    _carregarEstado().then((_) {
-      _sensorController.escutarSensorUmidade(
-        comodoId: widget.comodoId,
-        onSensorMolhado: () {
-          if (!_isClosed) {
-            _alternarJanela();
-          }
-        },
-      );
+@override
+void initState() {
+  super.initState();
+  _closedKey = 'closed_${widget.comodoId}_${widget.dispositivoNome}';
+  _aberturaKey = 'abertura_${widget.comodoId}_${widget.dispositivoNome}';
+  _ignorarSensorKey = 'ignorarSensor_${widget.comodoId}_${widget.dispositivoNome}';
+
+  _carregarEstado().then((_) {
+    _sensorController.escutarSensorUmidade(
+      comodoId: widget.comodoId,
+      onSensorMolhado: () {
+        if (!_isClosed) {
+          _alternarJanela();
+        }
+      },
+    );
+
+    // QUEBRA-GALHO: consulta única ao estado atual do sensor no Firebase
+    _sensorController.consultarSensorNoFirebase(widget.comodoId).then((molhado) {
+      if (molhado && !_isClosed) {
+        _alternarJanela();
+      }
     });
-  }
+  });
+}
   //#endregion
 
   //#region Firestore Helper
@@ -268,7 +276,7 @@ class _JanelaPageState extends State<JanelaPage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: GestureDetector(
-        onTap: _alternarJanela,
+        onTap: _verificarSensorAntesDeAbrir,
         child: Container(
           height: 60,
           decoration: BoxDecoration(

@@ -48,7 +48,7 @@ class SensorUmidadeController {
         .listen((snapshot) {
       final data = snapshot.data();
       final sensorMolhado = data?['sensor_umidade']?['molhado'];
-      if (sensorMolhado == false) {
+      if (sensorMolhado == true) {
         onSensorMolhado();
       }
     });

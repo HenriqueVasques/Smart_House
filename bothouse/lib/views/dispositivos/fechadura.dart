@@ -67,7 +67,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
     int angulo = _isLocked ? 90 : 180;
 
     await _wifiServicos.enviarValor(
-      rotaCodificada: 'rg38',
+      rotaCodificada: 'rg46',
       valor: angulo,
     );
   }

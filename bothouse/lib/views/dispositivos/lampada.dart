@@ -8,7 +8,6 @@ class LampadaPage extends StatefulWidget {
   final String comodoId;
   final String dispositivoNome;
 
-
   const LampadaPage({
     Key? key,
     required this.comodoId,
@@ -36,8 +35,6 @@ class _LampadaPageState extends State<LampadaPage> {
     _carregarEstado();
     _carregarIntensidade();
   }
-
-
 
   Future<void> _carregarEstado() async {
     _prefs = await SharedPreferences.getInstance();
@@ -304,7 +301,7 @@ Future<void> _carregarIntensidade() async {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.power_settings_new,
                   color: Colors.white,
                   size: 28,

@@ -188,7 +188,7 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
     Widget _buildIconePrincipal() {
       return const Icon(
         Icons.ac_unit,
-        size: 60, // TODO: Reduzido o tamanho do ícone
+        size: 60, 
         color: Colors.white,
       );
     }
@@ -245,7 +245,6 @@ class _ArCondicionadoPageState extends State<ArCondicionadoPage> {
               onChanged(novoValor);
             },
             child: Container(
-              // TODO: Altura reduzida do container
               height: 100,
               decoration: BoxDecoration(
                 color: Colors.grey[850],
