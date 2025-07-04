@@ -52,17 +52,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
     // Salva o estado localmente
     await _prefs.setBool(_lockKey, _isLocked);
 
-    List<String> listaCaracteres = _isLocked
-        ? ['Z', '#', '9', 'x', '\$', '%', '2'] 
-        : ['G', 'M', '!', '0', '@', 'a', '&'];
-
-    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
-
-    await _wifiServicos.enviarComando(
-      rotaCodificada: 'by03',
-      caractereChave: caractereSelecionado,
-    );
-
     // Define o ângulo do servo motor
     int angulo = _isLocked ? 90 : 180;
 
@@ -71,7 +60,6 @@ class _FechaduraPageState extends State<FechaduraPage> {
       valor: angulo,
     );
   }
-  //#endregion
   //#endregion
 
   //#region Build

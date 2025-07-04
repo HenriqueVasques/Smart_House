@@ -403,28 +403,8 @@ Widget _buildBottomNavigationBar(BuildContext context) {
           child: Container(
             height: 70,
             decoration: BoxDecoration(color: Colors.grey[900]),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 40),
-                  child: IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.white54),
-                    onPressed: () => {},
-                  ),
-                ),
-                const SizedBox(width: 60),
-                Padding(
-                  padding: const EdgeInsets.only(right: 40),
-                  child: IconButton(
-                    icon: const Icon(Icons.person, color: Colors.white54),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/');
-                    },
-                  ),
-                ),
-              ],
-            ),
+            // Ícones laterais removidos
+            child: const SizedBox.shrink(),
           ),
         ),
         Positioned(
@@ -454,6 +434,7 @@ Widget _buildBottomNavigationBar(BuildContext context) {
     ),
   );
 }
+
 ///#endregion
 
   }

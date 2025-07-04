@@ -21,10 +21,9 @@ class LampadaPage extends StatefulWidget {
 class _LampadaPageState extends State<LampadaPage> {
   //#region Variáveis de Estado
   final WifiServicos _wifiServicos = WifiServicos();
-  double _intensidade = 70;
   bool _isPowerOn = false;
   late SharedPreferences _prefs;
-  late String _powerKey; 
+  late String _powerKey;
   //#endregion
 
   //#region Ciclo de Vida
@@ -33,7 +32,6 @@ class _LampadaPageState extends State<LampadaPage> {
     super.initState();
     _powerKey = 'power_${widget.comodoId}_${widget.dispositivoNome}';
     _carregarEstado();
-    _carregarIntensidade();
   }
 
   Future<void> _carregarEstado() async {
@@ -50,7 +48,6 @@ class _LampadaPageState extends State<LampadaPage> {
       _isPowerOn = !_isPowerOn;
     });
 
-    // Salva o estado localmente
     await _prefs.setBool(_powerKey, _isPowerOn);
 
     List<String> listaCaracteres = _isPowerOn
@@ -64,39 +61,6 @@ class _LampadaPageState extends State<LampadaPage> {
       caractereChave: caractereSelecionado,
     );
   }
-
- void _atualizarIntensidade(double novaIntensidade) async {
-  final double valorCorrigido = novaIntensidade.clamp(0, 100);
-  setState(() {
-    _intensidade = valorCorrigido;
-  });
-
-  await _salvarIntensidade(valorCorrigido);
-
-  int valorPWM = (valorCorrigido / 100 * 255).toInt();
-
-  await _wifiServicos.enviarValor(
-    rotaCodificada: 'tf52',
-    valor: valorPWM,
-  );
-}
-
-Future<void> _salvarIntensidade(double valor) async {
-  final prefs = await SharedPreferences.getInstance();
-  final chave = 'intensidade_${widget.comodoId}_${widget.dispositivoNome}';
-  await prefs.setDouble(chave, valor);
-}
-
-Future<void> _carregarIntensidade() async {
-  final prefs = await SharedPreferences.getInstance();
-  final chave = 'intensidade_${widget.comodoId}_${widget.dispositivoNome}';
-  final valorSalvo = prefs.getDouble(chave);
-  if (valorSalvo != null) {
-    setState(() {
-      _intensidade = valorSalvo.clamp(0, 100);
-    });
-  }
-}
   //#endregion
 
   //#region Método Principal de Build
@@ -111,13 +75,11 @@ Future<void> _carregarIntensidade() async {
           children: [
             const SizedBox(height: 50),
             _buildIconePrincipal(),
-            const SizedBox(height: 0),
+            const SizedBox(height: 20),
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildGridBotoes(),
-                  _buildSliderIntensidade(),
                   _buildBotaoPower(),
                   const SizedBox(height: 20),
                 ],
@@ -158,122 +120,6 @@ Future<void> _carregarIntensidade() async {
       Icons.lightbulb_outline,
       size: 60,
       color: Colors.white,
-    );
-  }
-
-  Widget _buildGridBotoes() {
-    return Container(
-      height: 280,
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          _buildBotaoIntensidade(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotaoGrid(String titulo, String valorAtual, List<String> opcoes, Function(String) onChanged) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: GestureDetector(
-          onTap: () {
-            int index = opcoes.indexOf(valorAtual);
-            String novoValor = opcoes[(index + 1) % opcoes.length];
-            onChanged(novoValor);
-          },
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  titulo,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  valorAtual,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBotaoIntensidade() {
-    return Container(
-      height: 160,
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'Intensidade',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-                onPressed: () => _atualizarIntensidade(_intensidade - 10),
-              ),
-              Text(
-                '${_intensidade.toStringAsFixed(0)}%',
-                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                onPressed: () => _atualizarIntensidade(_intensidade + 10),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSliderIntensidade() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${_intensidade.toStringAsFixed(0)}%',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: const Color(0xFFFFEB3B),
-            inactiveTrackColor: Colors.grey[800],
-            thumbColor: Colors.white,
-            overlayColor: Colors.yellow.withOpacity(0.3),
-            trackHeight: 4.0,
-          ),
-          child: Slider(
-            min: 0,
-            max: 100,
-            value: _intensidade,
-            onChanged: _atualizarIntensidade,
-          ),
-        ),
-      ],
     );
   }
 

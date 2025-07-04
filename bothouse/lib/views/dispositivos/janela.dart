@@ -166,25 +166,36 @@ void initState() {
 
   //#region Abertura e Fechamento
   Future<void> _alternarJanela() async {
-    setState(() {
-      _isClosed = !_isClosed;
-      _aberturaSlider = _isClosed ? 0 : 100;
-      _abertura = '${_aberturaSlider.toInt()}%';
-    });
-    await _prefs.setBool(_closedKey, _isClosed);
-    await _salvarAbertura(_aberturaSlider);
+  setState(() {
+    _isClosed = !_isClosed;
+    _aberturaSlider = _isClosed ? 0 : 100;
+    _abertura = '${_aberturaSlider.toInt()}%';
+  });
 
-    List<String> listaCaracteres = _isClosed
-        ? ['Q', 'E', 'L', '1', '(', '=', ']']
-        : ['U', 'V', 'W', '*', 'b', 'N', '^'];
+  await _prefs.setBool(_closedKey, _isClosed);
+  await _salvarAbertura(_aberturaSlider);
 
-    String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+  // LED (como antes)
+  List<String> listaCaracteres = _isClosed
+      ? ['Q', 'E', 'L', '1', '(', '=', ']']
+      : ['U', 'V', 'W', '*', 'b', 'N', '^'];
 
-    await _wifiServicos.enviarComando(
-      rotaCodificada: 'gh77',
-      caractereChave: caractereSelecionado,
-    );
-  }
+  String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
+
+  await _wifiServicos.enviarComando(
+    rotaCodificada: 'gh77', 
+    caractereChave: caractereSelecionado,
+  );
+
+  // SERVO (novo)
+  int angulo = _isClosed ? 0 : 90;
+
+  await _wifiServicos.enviarValor(
+    rotaCodificada: 'op63', 
+    valor: angulo,
+  );
+}
+
   //#endregion
 
   //#region Interface (UI)
