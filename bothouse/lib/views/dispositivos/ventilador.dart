@@ -19,11 +19,11 @@ class VentiladorPage extends StatefulWidget {
 class _VentiladorPageState extends State<VentiladorPage> {
   //#region Variáveis de Estado
   final WifiServicos _wifiServicos = WifiServicos(); 
-  double _velocidadeSlider = 1; // 1-3 representando Baixa, Média, Alta
+  double _velocidadeSlider = 1; 
   bool _isPowerOn = false;
-  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
-  late String _powerKey; // Chave para salvar o estado liga/desliga
-  late String _velocidadeKey; // Chave para salvar o valor da velocidade
+  late SharedPreferences _prefs;
+  late String _powerKey;
+  late String _velocidadeKey;
   //#endregion
 
   //#region Ciclo de Vida
@@ -42,11 +42,10 @@ class _VentiladorPageState extends State<VentiladorPage> {
     final velocidadeValor = _prefs.getDouble(_velocidadeKey);
     if (velocidadeValor != null) {
       setState(() {
-        _velocidadeSlider = velocidadeValor.clamp(1, 3); // Velocidade varia de 1 a 3
+        _velocidadeSlider = velocidadeValor.clamp(1, 3); 
       });
     }
     
-    // Carregamos o estado liga/desliga
     setState(() {
       _isPowerOn = _prefs.getBool(_powerKey) ?? false;
     });
@@ -59,13 +58,12 @@ class _VentiladorPageState extends State<VentiladorPage> {
       _velocidadeSlider = novaVelocidade;
     });
     
-    // Salva a velocidade localmente
     await _salvarVelocidade(novaVelocidade);
 
     int valorVelocidade = novaVelocidade.toInt(); // 1, 2 ou 3
 
     await _wifiServicos.enviarValor(
-      rotaCodificada: 'hv21', // rota do ventilador
+      rotaCodificada: 'hv21',
       valor: valorVelocidade,
     );
   }
@@ -91,7 +89,7 @@ class _VentiladorPageState extends State<VentiladorPage> {
     String caractereSelecionado = (listaCaracteres.toList()..shuffle()).first;
 
     await _wifiServicos.enviarComando(
-      rotaCodificada: 'hv21', // Rota codificada do ventilador no ESP32
+      rotaCodificada: 'hv21', 
       caractereChave: caractereSelecionado,
     );
     

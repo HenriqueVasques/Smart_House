@@ -1,7 +1,7 @@
 //#region Imports
 import 'package:bothouse/servicos/wifi_servicos.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Adicionado import do SharedPreferences
+import 'package:shared_preferences/shared_preferences.dart'; 
 //#endregion
 
 class FechaduraPage extends StatefulWidget {
@@ -23,8 +23,8 @@ class _FechaduraPageState extends State<FechaduraPage> {
   final WifiServicos _wifiServicos = WifiServicos();
 
   bool _isLocked = true;
-  late SharedPreferences _prefs; // Adicionada variável para SharedPreferences
-  late String _lockKey; // Chave para salvar o estado da fechadura
+  late SharedPreferences _prefs;
+  late String _lockKey; 
   //#endregion
 
   //#region Ciclo de Vida
@@ -38,7 +38,7 @@ class _FechaduraPageState extends State<FechaduraPage> {
   Future<void> _carregarEstado() async {
     _prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isLocked = _prefs.getBool(_lockKey) ?? true; // Por padrão a fechadura está trancada
+      _isLocked = _prefs.getBool(_lockKey) ?? true;
     });
   }
   //#endregion

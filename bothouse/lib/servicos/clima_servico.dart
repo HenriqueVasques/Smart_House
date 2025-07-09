@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:bothouse/segredos.dart';
 
 class ClimaModel {
   final double temperatura;
@@ -9,7 +10,7 @@ class ClimaModel {
 }
 
 class ClimaServico {
-  final String apiKey = 'a0bc762c84694ce9ff45fde96de3fefb';
+  final String apiKey = Segredos.openWeatherApiKey;
   final String cidade = 'Mirassol,BR';
   final String unidade = 'metric';
 

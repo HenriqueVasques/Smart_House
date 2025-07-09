@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:bothouse/segredos.dart';
 //#endregion
 
 class WifiServicos {
   //#region Configurações
-  final String baseUrl = "http://192.168.0.16"; // IP fixo do ESP32
-  final String chaveSecreta = "5fA9#zL3pW!c@Kq*4tE1vX8g^mN0dRb2";
+  final String baseUrl = Segredos.ipESP32;
+  final String chaveSecreta = Segredos.chaveSeguraESP32;
+
 
   final List<String> caracteresValidos = [
     'A','B','C','D','E','F','G','H','I','J','K','L','M',

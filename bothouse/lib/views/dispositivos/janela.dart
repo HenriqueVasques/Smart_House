@@ -53,7 +53,6 @@ void initState() {
       },
     );
 
-    // QUEBRA-GALHO: consulta única ao estado atual do sensor no Firebase
     _sensorController.consultarSensorNoFirebase(widget.comodoId).then((molhado) {
       if (molhado && !_isClosed) {
         _alternarJanela();
@@ -130,7 +129,7 @@ void initState() {
     final ignorarAte = _prefs.getInt(_ignorarSensorKey) ?? 0;
     final estaIgnorando = agora < ignorarAte;
 
-    if (!molhado || estaIgnorando) {
+    if (molhado || estaIgnorando) {
       _alternarJanela();
       return;
     }
